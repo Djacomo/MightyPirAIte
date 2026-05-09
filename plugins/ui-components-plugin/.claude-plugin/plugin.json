@@ -1,0 +1,9 @@
+{
+  "name": "ui-components-plugin",
+  "displayName": "UI Components Refactor",
+  "description": "Extract and apply a reusable UI component system across your project.",
+  "version": "1.0.0",
+  "skills": [
+    "skills/ui-components-refactor"
+  ]
+}
