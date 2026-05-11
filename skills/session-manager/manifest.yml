@@ -1,0 +1,23 @@
+name: session-manager
+type: skill
+version: 1.0.0
+author: Djacomo
+description: >
+  Provides /see-you and /welcome-back slash commands for consistent
+  session management across any Claude Code project. Updates
+  PROJECT_STATUS.md on exit and restores full context on return.
+stack:
+  - any
+level:
+  - any
+claude-code-version: ">=1.0.0"
+tested-on:
+  - macOS
+  - Linux
+cost:
+  level: free
+  dependencies: []
+tags:
+  - dx
+  - session
+  - context
