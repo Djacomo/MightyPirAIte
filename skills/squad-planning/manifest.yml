@@ -1,0 +1,28 @@
+name: squad-planning
+type: skill
+version: 1.0.0
+author: Djacomo
+description: >
+  Dispatches an 8-agent parallel squad (PM, Arch Lead, UI/UX Expert,
+  DevSecOps Leader, Good-Hacker, QA/Test Engineer, + up to 2 project
+  stakeholders) before any spec, plan, or handoff is written.
+  Project-agnostic — reads all context from .claude/squad-profile.md.
+  First run triggers an interactive setup to create the profile.
+stack:
+  - any
+level:
+  - mid
+  - senior
+  - architect
+claude-code-version: ">=1.0.0"
+tested-on:
+  - macOS
+cost:
+  level: free
+  dependencies: []
+tags:
+  - planning
+  - architecture
+  - security
+  - qa
+  - multi-agent

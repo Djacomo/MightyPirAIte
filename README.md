@@ -61,7 +61,8 @@ If you write code, you belong here.
 
 | Name | Description | Stack | Level | Cost |
 |---|---|---|---|---|
-| [`ui-components-refactor`](./skills/ui-components-plugin/) | Extract a reusable component library and design tokens from existing HTML/CSS | `html-css` `any` | `mid` `senior` | 🟢 free |
+| [`ui-components-refactor`](./skills/ui-components-refactor/) | Extract a reusable component library and design tokens from existing HTML/CSS | `html-css` `any` | `mid` `senior` | 🟢 free |
+| [`squad-planning`](./skills/squad-planning/) | Dispatch an 8-agent parallel squad (PM, Arch, UI/UX, DevSecOps, Good-Hacker, QA + stakeholders) before any spec or plan | `any` | `mid` `senior` `architect` | 🟢 free |
 
 ### 🔌 MCP Configurations
 
@@ -92,16 +93,25 @@ Every tool in this marketplace is transparently labelled:
 
 ## Install a skill
 
+**One-liner — install all skills:**
 ```bash
-# Add the marketplace to Claude Code
-/plugin marketplace add Djacomo/MightyPirAIte
-
-# Install a specific skill
-/plugin install ui-components-plugin@mighty-piraite
-
-# Then invoke it
-/ui-components-refactor
+curl -fsSL https://raw.githubusercontent.com/Djacomo/MightyPirAIte/master/install.sh | bash
 ```
+
+**One-liner — install a single skill:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/Djacomo/MightyPirAIte/master/install.sh | bash -s squad-planning
+```
+
+**From a cloned repo:**
+```bash
+git clone https://github.com/Djacomo/MightyPirAIte
+cd MightyPirAIte
+./install.sh                  # all skills
+./install.sh squad-planning   # one skill
+```
+
+Skills are copied to `~/.claude/skills/` and are immediately available in every Claude Code session. Invoke with `/skill-name`.
 
 ---
 
