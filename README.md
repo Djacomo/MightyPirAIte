@@ -61,8 +61,9 @@ If you write code, you belong here.
 
 | Name | Description | Stack | Level | Cost |
 |---|---|---|---|---|
-| [`ui-components-refactor`](./skills/ui-components-refactor/) | Extract a reusable component library and design tokens from existing HTML/CSS | `html-css` `any` | `mid` `senior` | 🟢 free |
-| [`squad-planning`](./skills/squad-planning/) | Dispatch an 8-agent parallel squad (PM, Arch, UI/UX, DevSecOps, Good-Hacker, QA + stakeholders) before any spec or plan | `any` | `mid` `senior` `architect` | 🟢 free |
+| [`ui-components-refactor`](./plugins/ui-components-refactor/) | Extract a reusable component library and design tokens from existing HTML/CSS | `html-css` `any` | `mid` `senior` | 🟢 free |
+| [`session-manager`](./plugins/session-manager/) | `/see-you` and `/welcome-back` commands for consistent session management | `any` | `any` | 🟢 free |
+| [`squad-planning`](./plugins/squad-planning/) | Dispatch an 8-agent parallel squad (PM, Arch, UI/UX, DevSecOps, Good-Hacker, QA + stakeholders) before any spec or plan | `any` | `mid` `senior` `architect` | 🟢 free |
 
 ### 🔌 MCP Configurations
 
@@ -93,6 +94,19 @@ Every tool in this marketplace is transparently labelled:
 
 ## Install a skill
 
+### Via Claude Code marketplace (recommended)
+
+```bash
+/plugin marketplace add Djacomo/MightyPirAIte
+/plugin install squad-planning@MightyPirAIte
+```
+
+Skills are namespaced: invoke as `/squad-planning:squad-planning`.
+
+### Via install script (short names, no namespace)
+
+Skills are copied to `~/.claude/skills/` and invoked as `/squad-planning`.
+
 **One-liner — install all skills:**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Djacomo/MightyPirAIte/master/install.sh | bash
@@ -111,8 +125,6 @@ cd MightyPirAIte
 ./install.sh squad-planning   # one skill
 ```
 
-Skills are copied to `~/.claude/skills/` and are immediately available in every Claude Code session. Invoke with `/skill-name`.
-
 ---
 
 ## Structure
@@ -123,27 +135,35 @@ MightyPirAIte/
 ├── CONTRIBUTING.md                  # How to join the crew
 ├── README.md                        # You are here
 ├── LICENSE
+├── install.sh                       # Community install script (curl | bash)
+├── deploy-skills.sh                 # Author's personal deploy to ~/.claude/skills/
 │
-├── skills/
-│   └── {skill-name}/
-│       ├── manifest.yml             # Metadata, stack, level, cost
-│       └── SKILL.md
+├── .claude-plugin/
+│   └── marketplace.json             # Claude Code marketplace catalog
+│
+├── plugins/
+│   └── {plugin-name}/
+│       ├── .claude-plugin/
+│       │   └── plugin.json          # Plugin metadata for Claude Code
+│       └── skills/
+│           └── {plugin-name}/
+│               └── SKILL.md
 │
 ├── mcp/
 │   └── {service-name}/
-│       ├── manifest.yml
-│       ├── config.json
+│       ├── plugin.json
+│       ├── .mcp.json
 │       └── README.md
 │
 ├── cli/
 │   └── {tool-name}/
-│       ├── manifest.yml
+│       ├── plugin.json
 │       ├── {tool-name}.sh
 │       └── README.md
 │
 └── templates/
     └── {stack-name}/
-        ├── manifest.yml
+        ├── plugin.json
         └── CLAUDE.md
 ```
 

@@ -1,0 +1,24 @@
+{
+  "name": "MightyPirAIte",
+  "owner": {
+    "name": "Djacomo",
+    "url": "https://github.com/Djacomo"
+  },
+  "plugins": [
+    {
+      "name": "squad-planning",
+      "source": "./plugins/squad-planning",
+      "description": "Dispatch an 8-agent parallel squad (PM, Arch, UI/UX, DevSecOps, Good-Hacker, QA + stakeholders) before any spec or plan"
+    },
+    {
+      "name": "session-manager",
+      "source": "./plugins/session-manager",
+      "description": "Provides /see-you and /welcome-back commands for consistent session management across any Claude Code project"
+    },
+    {
+      "name": "ui-components-refactor",
+      "source": "./plugins/ui-components-refactor",
+      "description": "Extract a reusable component library and design tokens from existing HTML/CSS"
+    }
+  ]
+}

@@ -13,15 +13,16 @@ set -e
 REPO_URL="https://github.com/Djacomo/MightyPirAIte"
 TMP_DIR=""
 SKILLS_DST="$HOME/.claude/skills"
+COMMANDS_DST="$HOME/.claude/commands"
 
-# Resolve skills source — works both from a cloned repo and via curl|bash
+# Resolve plugins source — works both from a cloned repo and via curl|bash
 if [ -f "$(dirname "$0")/deploy-skills.sh" ]; then
-  SKILLS_SRC="$(cd "$(dirname "$0")/skills" && pwd)"
+  PLUGINS_SRC="$(cd "$(dirname "$0")/plugins" && pwd)"
 else
   echo "→ Cloning MightyPirAIte..."
   TMP_DIR="$(mktemp -d)"
   git clone --depth 1 "$REPO_URL" "$TMP_DIR" --quiet
-  SKILLS_SRC="$TMP_DIR/skills"
+  PLUGINS_SRC="$TMP_DIR/plugins"
 fi
 
 cleanup() { [ -n "$TMP_DIR" ] && rm -rf "$TMP_DIR"; }
@@ -35,14 +36,24 @@ fi
 FILTER="${1:-}"
 
 installed=0
-for skill_dir in "$SKILLS_SRC"/*/; do
-  name="$(basename "$skill_dir")"
+for plugin_dir in "$PLUGINS_SRC"/*/; do
+  name="$(basename "$plugin_dir")"
   [ "$name" = ".DS_Store" ] && continue
   if [ -n "$FILTER" ] && [ "$name" != "$FILTER" ]; then continue; fi
-  echo "→ $name"
-  rm -rf "$SKILLS_DST/$name"
-  cp -r "$skill_dir" "$SKILLS_DST/$name"
-  installed=$((installed + 1))
+
+  skill_file="$plugin_dir/skills/$name/SKILL.md"
+  if [ -f "$skill_file" ]; then
+    echo "→ $name"
+    mkdir -p "$SKILLS_DST/$name"
+    cp "$skill_file" "$SKILLS_DST/$name/SKILL.md"
+    installed=$((installed + 1))
+  fi
+
+  if [ -d "$plugin_dir/commands" ]; then
+    mkdir -p "$COMMANDS_DST"
+    cp "$plugin_dir/commands/"*.md "$COMMANDS_DST/" 2>/dev/null || true
+    echo "  commands → $COMMANDS_DST"
+  fi
 done
 
 if [ "$installed" -eq 0 ]; then

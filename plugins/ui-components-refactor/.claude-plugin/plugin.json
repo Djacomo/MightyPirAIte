@@ -1,0 +1,10 @@
+{
+  "name": "ui-components-refactor",
+  "description": "Extracts a reusable UI component library and design tokens from existing HTML/CSS, then applies them consistently across the whole project — one incremental batch at a time.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Djacomo",
+    "url": "https://github.com/Djacomo"
+  },
+  "homepage": "https://github.com/Djacomo/MightyPirAIte/tree/master/plugins/ui-components-refactor"
+}

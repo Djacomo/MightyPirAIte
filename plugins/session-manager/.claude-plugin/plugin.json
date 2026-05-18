@@ -1,0 +1,10 @@
+{
+  "name": "session-manager",
+  "description": "Provides /see-you and /welcome-back commands for consistent session management across any Claude Code project. Updates PROJECT_STATUS.md on exit and restores full context on return.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Djacomo",
+    "url": "https://github.com/Djacomo"
+  },
+  "homepage": "https://github.com/Djacomo/MightyPirAIte/tree/master/plugins/session-manager"
+}
