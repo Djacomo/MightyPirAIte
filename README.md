@@ -64,6 +64,7 @@ If you write code, you belong here.
 | [`ui-components-refactor`](./plugins/ui-components-refactor/) | Extract a reusable component library and design tokens from existing HTML/CSS | `html-css` `any` | `mid` `senior` | 🟢 free |
 | [`session-manager`](./plugins/session-manager/) | `/see-you` and `/welcome-back` commands for consistent session management | `any` | `any` | 🟢 free |
 | [`squad-planning`](./plugins/squad-planning/) | Dispatch an 8-agent parallel squad (PM, Arch, UI/UX, DevSecOps, Good-Hacker, QA + stakeholders) before any spec or plan | `any` | `mid` `senior` `architect` | 🟢 free |
+| [`stakeholder-acceptance`](./plugins/stakeholder-acceptance/) | Post-implementation stakeholder review: AI compliance check + human UAT click-through script | `any` | `mid` `senior` `architect` | 🟢 free |
 
 ### 🔌 MCP Configurations
 

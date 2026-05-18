@@ -1,0 +1,10 @@
+{
+  "name": "stakeholder-acceptance",
+  "description": "Post-implementation stakeholder review: AI compliance check against original requirements + human UAT click-through script. Runs after implementation is complete, before marking a feature as shipped.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Djacomo",
+    "url": "https://github.com/Djacomo"
+  },
+  "homepage": "https://github.com/Djacomo/MightyPirAIte/tree/master/plugins/stakeholder-acceptance"
+}

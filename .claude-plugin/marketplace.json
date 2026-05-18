@@ -19,6 +19,11 @@
       "name": "ui-components-refactor",
       "source": "./plugins/ui-components-refactor",
       "description": "Extract a reusable component library and design tokens from existing HTML/CSS"
+    },
+    {
+      "name": "stakeholder-acceptance",
+      "source": "./plugins/stakeholder-acceptance",
+      "description": "Post-implementation stakeholder review: AI compliance check against original requirements + human UAT click-through script"
     }
   ]
 }
