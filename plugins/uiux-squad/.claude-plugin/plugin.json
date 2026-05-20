@@ -1,0 +1,10 @@
+{
+  "name": "uiux-squad",
+  "description": "Standalone UI/UX Squad mini round table for UI tweaks, flow questions, and accessibility fixes — Senior UX Designer + Senior Accessibility Engineer run in parallel, UX Lead reconciles into a unified position. No full Heads Team run required. Reads context from .claude/squad-profile.md.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Djacomo",
+    "url": "https://github.com/Djacomo"
+  },
+  "homepage": "https://github.com/Djacomo/MightyPirAIte/tree/master/plugins/uiux-squad"
+}

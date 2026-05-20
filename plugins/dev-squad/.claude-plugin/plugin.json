@@ -1,0 +1,10 @@
+{
+  "name": "dev-squad",
+  "description": "Standalone Dev Squad mini round table for bugs and small features — Senior Backend + Senior Frontend run in parallel, Dev Lead reconciles into a unified position. No full Heads Team run required. Reads context from .claude/squad-profile.md.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Djacomo",
+    "url": "https://github.com/Djacomo"
+  },
+  "homepage": "https://github.com/Djacomo/MightyPirAIte/tree/master/plugins/dev-squad"
+}

@@ -1,7 +1,7 @@
 {
   "name": "squad-planning",
-  "description": "Dispatch an 8-agent parallel squad (PM, Arch Lead, UI/UX Expert, DevSecOps Leader, Good-Hacker, QA/Test Engineer, + project stakeholders) before any spec, plan, or handoff is written. Project-agnostic — reads context from .claude/squad-profile.md.",
-  "version": "1.0.0",
+  "description": "Dispatch a two-tier Tavola Rotonda squad before any spec or plan is written: Heads Team (AI Expert, Arch Lead anchor, PM, DevSecOps, Good-Hacker, QA) followed by Dev Squad and UI/UX Squad specialist deep-dives. Checkpoint/resume system saves progress if tokens run out. Project-agnostic — reads context from .claude/squad-profile.md.",
+  "version": "3.0.0",
   "author": {
     "name": "Djacomo",
     "url": "https://github.com/Djacomo"
