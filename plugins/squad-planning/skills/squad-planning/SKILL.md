@@ -7,11 +7,16 @@ description: Use when starting any planning, spec, or handoff writing activity �
 
 ## Overview
 
-Eight specialist agents plus an AI Expert are available for parallel review before any planning document is written. The squad operates in **two phases**: a serial AI Expert pre-flight that creates a targeted dispatch plan, then a parallel squad review using that plan. No spec, plan, or handoff is created without this squad review.
+Squad Planning runs a **two-tier Tavola Rotonda** before any spec or plan is written.
 
-**This skill is project-agnostic.** All project-specific context (tech stack, file paths, stakeholder definitions) lives in `.claude/squad-profile.md`. Agent prompts use `{placeholders}` filled from that file at dispatch time.
+- **Tier 1 — Heads Team**: Strategic, cross-cutting review. Produces the "Heads Brief".
+- **Tier 2 — Specialist Squads**: Dev Squad and UI/UX Squad receive the Brief and go deep in their domain via a mini round table.
 
-**Announce at start:** "Activating squad: reading project profile — evaluating roster."
+**This skill is project-agnostic.** All project-specific context lives in `.claude/squad-profile.md`.
+
+**Announce at start:** "Activating Heads Team: reading project profile — evaluating roster."
+
+**Checkpoint directory:** `.claude/squad-run/` — written after every phase. Delete it to start a fresh run.
 
 ---
 
@@ -19,18 +24,18 @@ Eight specialist agents plus an AI Expert are available for parallel review befo
 
 Check whether `.claude/squad-profile.md` exists in the project root.
 
-**If missing:** Run Question Time before doing anything else. Ask the user the following in a single conversation turn:
+**If missing:** Ask the user the following in a single turn:
 
-> 1. **Project identity** — Name and one-sentence description of what it does.
-> 2. **Tech stack** — Language, framework, and key libraries.
-> 3. **Stakeholders** — Who are the end users? For each type: name, what they do, what makes their perspective unique. (1–4 stakeholders. These become the Stakeholder slots in the squad.)
-> 4. **Architecture file** — Path to the file that gives instant codebase orientation (e.g. PROJECT_MAP.md, README, CONTEXT.md).
-> 5. **Security reference** — Path to an existing file showing correct auth/permission patterns (e.g. an existing handler). Say "none" if absent.
-> 6. **Test infrastructure** — Test directory path, framework name, and whether the suite is mature or sparse.
+> 1. **Project identity** — Name and one-sentence description.
+> 2. **Tech stack** — Language, framework, key libraries.
+> 3. **Stakeholders** — Who are the end users? For each: name, what they do, what makes their perspective unique. (1–4 stakeholders.)
+> 4. **Architecture file** — Path to the file that gives instant codebase orientation.
+> 5. **Security reference** — Path to an existing file showing correct auth/permission patterns. Say "none" if absent.
+> 6. **Test infrastructure** — Test directory path, framework name, maturity (mature or sparse).
 
-Then write `.claude/squad-profile.md` using the template below and confirm: **"Profile saved. Squad is ready."**
+Write `.claude/squad-profile.md` using the template below and confirm: **"Profile saved. Squad is ready."**
 
-**If found:** Read it silently and proceed to Phase 0.
+**If found:** Read it silently and proceed to Checkpoint Check.
 
 ### Profile File Template
 
@@ -47,7 +52,7 @@ architecture: {absolute path to orientation file}
 security_reference: {absolute path to security pattern reference, or "none"}
 test_directory: {absolute path to test directory}
 test_framework: {framework name}
-test_note: {maturity note — e.g. "suite is sparse, flag gaps explicitly"}
+test_note: {maturity note}
 
 ## Stakeholders
 
@@ -56,92 +61,144 @@ description: {who they are and what they do}
 reads: {absolute paths to files most relevant to their perspective}
 evict_when: {condition under which this stakeholder is irrelevant to the goal}
 voice: {tone — e.g. "first person, non-technical, honest about confusion"}
-
-### {Stakeholder 2 Name}
-description: {who they are and what they do}
-reads: {absolute paths}
-evict_when: {condition}
-voice: {tone}
 ```
 
 ---
 
-## The Squad
+## Checkpoint Check
 
-### Expert Roles (universal — always available)
+On every run, before dispatching anything, check `.claude/squad-run/` for existing checkpoint files. Restore completed phases from disk; dispatch only missing ones.
 
-| Role | Domain |
+**Checkpoint files and what they represent:**
+
+| File | Phase |
 |---|---|
-| **AI Expert** | Phase 0 pre-flight — analyzes goal, plans targeted dispatch: who to evict, per-agent file list, output budgets, what to pre-summarize |
-| **PM** | Product scope, MVP definition, delivery risk, roadmap fit, user story clarity, over-engineering detection |
-| **Arch Team Lead** | File ownership, data model, schema migrations, integration points, existing patterns, breaking changes |
-| **UI/UX Expert** | User flow, component reuse, design consistency, accessibility, mobile, visual language |
-| **DevSecOps Leader** | Auth/permission gates, input validation, output encoding, data exposure, rate limiting, compliance |
-| **Good-Hacker** | Offensive threat model — attack vectors, bypass attempts, enumeration, what survives DevSecOps defenses |
-| **QA/Test Engineer** | Unit test strategy, integration coverage, regression surface, manual test checklist, untestable design flags |
+| `dispatch-plan.md` | Phase 0 — AI Expert output |
+| `arch-anchor.md` | Phase 1a — Arch Lead output |
+| `heads-brief.md` | Phase 1b — Heads Team compressed brief |
+| `dev-squad.md` | Phase 2 — Dev Squad unified position |
+| `uiux-squad.md` | Phase 2 — UI/UX Squad unified position |
+| `synthesis.md` | Final synthesis |
 
-### Stakeholder Slots (from profile)
+**Announce restored vs. dispatched:**
 
-Loaded at runtime from `.claude/squad-profile.md`. Each defined stakeholder becomes a squad member with its own eviction rule.
+```
+Resuming squad run.
+✓ Phase 0 restored  (dispatch-plan.md)
+✓ Phase 1a restored (arch-anchor.md)
+↻ Phase 1b dispatching — no checkpoint found
+```
+
+For a fresh run (no checkpoints), announce:
+
+```
+Fresh squad run.
+Phase 0: AI Expert dispatched.
+Heads Team roster: PM ✓ | Arch Lead ✓ | DevSecOps ✓ | Good-Hacker ✓ | QA ✓ | {Stakeholder 1} ✗ (reason)
+Phase 2: Dev Squad ✓ | UI/UX Squad ✓
+```
 
 ---
 
-## Squad Membership — Evict & Recall
+## The Heads Team (Tier 1)
 
-Before dispatching, read the goal and evaluate each member. Announce the active roster with evictions explained.
+| Role | Anchor? | Domain |
+|---|---|---|
+| **AI Expert** | Phase 0 (serial) | Dispatch planning — never evict |
+| **Arch Team Lead** | Yes — Phase 1a solo | File ownership, data model, integration points, breaking changes — never evict |
+| **PM** | No | Scope, MVP, delivery risk, user stories |
+| **DevSecOps Leader** | No | Auth gates, input validation, data exposure, compliance |
+| **Good-Hacker** | No | Offensive threat model |
+| **QA/Test Engineer** | No | Test strategy, regression surface |
+| **Stakeholders** | No | Loaded from squad-profile; evicted per `evict_when` |
 
-### Expert eviction rules
+### Heads Team Eviction Rules
 
 | Member | Evict when |
 |---|---|
-| **AI Expert** | **Never evict.** Always runs as Phase 0 before squad dispatch. |
-| **Arch Team Lead** | **Never evict.** Architecture review is always required. |
-| **PM** | Genuine hotfix only — wrong label, broken style, single-line typo. Any feature or refactor: keep. |
-| **UI/UX Expert** | Goal touches no UI layer at all — pure backend / schema / infra change with zero rendering impact |
-| **DevSecOps Leader** | Goal introduces no new data flows, endpoints, inputs, or query parameters — pure internal refactor of already-secure code |
-| **Good-Hacker** | Goal is UI/template/doc-only — no code paths, no data flow, no endpoints |
-| **QA/Test Engineer** | Goal is UI/template-only with zero logic changes |
+| AI Expert | Never |
+| Arch Team Lead | Never |
+| PM | Genuine hotfix only (wrong label, broken style, single-line typo) |
+| DevSecOps Leader | No new data flows, endpoints, inputs, or query parameters |
+| Good-Hacker | UI/template/doc-only — no code paths, no data flow |
+| QA/Test Engineer | UI/template-only with zero logic changes |
+| Stakeholders | Per `evict_when` in profile |
 
-### Stakeholder eviction rules
+---
 
-Use the `evict_when` condition from each stakeholder's profile entry.
+## The Specialist Squads (Tier 2)
 
-**When in doubt, keep the member.** Eviction is a cost-saving measure, not a default.
+Both squads always run after the Heads Team in a full cascade. Evict a squad only if its domain is completely irrelevant (e.g., evict UI/UX Squad for a pure backend/schema change with zero rendering impact; evict Dev Squad never).
 
-### Recall
+### Dev Squad
 
-If synthesis reveals an evicted member's domain is unexpectedly implicated, dispatch them as a follow-up agent and append their findings before finalizing the spec.
+| Role | Phase |
+|---|---|
+| Senior Backend Engineer | Phase 2a — parallel |
+| Senior Frontend Engineer | Phase 2a — parallel |
+| Dev Lead | Phase 2b — reconciliation (reads both 2a outputs) |
 
-### Announce the active roster
+### UI/UX Squad
 
-```
-Phase 0: AI Expert dispatched.
-Phase 1 roster: PM ✓ | Arch Lead ✓ | UI/UX ✓ | DevSecOps ✓ | Good-Hacker ✓ | QA ✓ | {Stakeholder 1} ✗ (reason) | {Stakeholder 2} ✓
-Dispatching N agents in parallel.
-```
+| Role | Phase |
+|---|---|
+| Senior UX Designer | Phase 2a — parallel |
+| Senior Accessibility Engineer | Phase 2a — parallel |
+| UX Lead | Phase 2b — reconciliation (reads both 2a outputs) |
 
 ---
 
 ## Dispatch Pattern
 
-### Phase 0 — AI Expert Pre-flight (serial)
+### Phase 0 — AI Expert (serial)
 
-1. Read `.claude/squad-profile.md` — extract all placeholder values
-2. Dispatch **AI Expert alone** as a single foreground `Agent` call (`subagent_type: "claude"`)
-3. AI Expert returns a Dispatch Plan: active roster + per-agent file list + output budgets + pre-summarize list
-4. **Orchestrator pre-flight** — read each file flagged for pre-summarization (never more than 2 files):
-   - `{arch_summary}`: 200–300 word extract covering project structure, key modules, and anything in the architecture file relevant to the goal
-   - `{security_summary}`: 100–150 word extract of auth/permission patterns from the security reference (only if DevSecOps or Good-Hacker are active; omit if `security_reference` is "none")
-5. Apply evictions from the AI Expert's plan. Announce the Phase 1 roster.
+1. Check `.claude/squad-run/dispatch-plan.md` — if exists, restore and skip to Phase 1a check.
+2. Read `.claude/squad-profile.md` only.
+3. Dispatch **AI Expert** as a single foreground `Agent` call (`subagent_type: "claude"`).
+4. AI Expert returns Dispatch Plan: active Heads Team roster, per-agent file lists, output budgets, pre-summarize list.
+5. **Write checkpoint:** `.claude/squad-run/dispatch-plan.md` ← AI Expert full output.
 
-### Phase 1 — Squad Dispatch (parallel)
+### Phase 1a — Arch Lead Anchor (serial)
 
-6. For each active agent, build their prompt from the template by:
-   - Filling `{arch_summary}` and `{security_summary}` with the pre-read summaries
-   - Filling `{specific_files}` with the AI Expert's file list for that agent (1–3 files)
-   - Filling `{output_budget}` with the token budget from the AI Expert's plan
-7. Dispatch all active agents as parallel `Agent` calls (`subagent_type: "claude"`)
-8. Each agent receives: the goal verbatim + their filled prompt
+1. Check `.claude/squad-run/arch-anchor.md` — if exists, restore and skip.
+2. **Orchestrator pre-flight** — read architecture file, produce `{arch_summary}` (200–300 words).
+3. If DevSecOps or Good-Hacker are active and `security_reference` is not "none", read it and produce `{security_summary}` (100–150 words).
+4. Dispatch **Arch Team Lead** alone as a single foreground `Agent` call.
+5. **Write checkpoint:** `.claude/squad-run/arch-anchor.md` ← Arch Lead full output.
+
+### Phase 1b — Heads Team Parallel
+
+1. Check `.claude/squad-run/heads-brief.md` — if exists, restore and skip.
+2. Read `arch-anchor.md` content as `{arch_anchor_text}`.
+3. Dispatch all active non-Arch Heads Team members in **parallel** `Agent` calls. Each receives `{arch_anchor_text}` injected as text (not re-read).
+4. Wait for all to return.
+5. Orchestrator compresses all Phase 1b outputs into `{heads_brief}` (~400 tokens): key constraints, risks, and decisions per domain.
+6. **Write checkpoint:** `.claude/squad-run/heads-brief.md` ← compressed brief.
+
+### Phase 2 — Specialist Squads (parallel squads, sequential within each)
+
+Dev Squad and UI/UX Squad are dispatched to start **at the same time**. Within each squad, Phase 2b waits for Phase 2a.
+
+**Dev Squad:**
+1. Check `.claude/squad-run/dev-squad.md` — if exists, restore and skip.
+2. Read `heads-brief.md` as `{heads_brief}`.
+3. Phase 2a: Dispatch Senior Backend Engineer + Senior Frontend Engineer in parallel. Both receive `{heads_brief}`.
+4. Phase 2b: Dispatch Dev Lead alone. Receives both Phase 2a outputs.
+5. **Write checkpoint:** `.claude/squad-run/dev-squad.md` ← Dev Lead output.
+
+**UI/UX Squad (in parallel with Dev Squad):**
+1. Check `.claude/squad-run/uiux-squad.md` — if exists, restore and skip.
+2. Read `heads-brief.md` as `{heads_brief}`.
+3. Phase 2a: Dispatch Senior UX Designer + Senior Accessibility Engineer in parallel. Both receive `{heads_brief}`.
+4. Phase 2b: Dispatch UX Lead alone. Receives both Phase 2a outputs.
+5. **Write checkpoint:** `.claude/squad-run/uiux-squad.md` ← UX Lead output.
+
+### Synthesis
+
+1. Check `.claude/squad-run/synthesis.md` — if exists, restore and present.
+2. Read all checkpoint files: `dispatch-plan.md`, `arch-anchor.md`, `heads-brief.md`, `dev-squad.md`, `uiux-squad.md`.
+3. Produce Squad Review block (see Synthesis section below).
+4. **Write checkpoint:** `.claude/squad-run/synthesis.md`.
 
 ---
 
@@ -149,13 +206,15 @@ Dispatching N agents in parallel.
 
 ### Placeholders
 
-Filled from profile: `{project_name}`, `{project_description}`, `{tech_stack}`, `{test_directory}`, `{test_framework}`, `{test_note}`.
+From profile: `{project_name}`, `{project_description}`, `{tech_stack}`, `{test_directory}`, `{test_framework}`, `{test_note}`.
 
-Filled from AI Expert's dispatch plan:
-- `{arch_summary}` — pre-read architecture summary (200–300 words, created by orchestrator)
-- `{security_summary}` — pre-read security patterns summary (100–150 words, created by orchestrator)
-- `{specific_files}` — per-agent file list, 1–3 files (varies by agent)
-- `{output_budget}` — token budget for this agent's entire output
+From orchestrator pre-flight:
+- `{arch_summary}` — 200–300 word architecture summary (Phase 0 pre-flight)
+- `{security_summary}` — 100–150 word security patterns summary (omit if "none")
+- `{arch_anchor_text}` — full Arch Lead output injected into Phase 1b agents
+- `{heads_brief}` — ~400-token compressed Heads Team brief injected into Phase 2 agents
+- `{specific_files}` — per-agent file list from AI Expert (1–3 files)
+- `{output_budget}` — token budget from AI Expert
 
 ---
 
@@ -166,37 +225,40 @@ You are the AI Efficiency Expert for {project_name} — {project_description}.
 
 FEATURE GOAL: {goal}
 
-Read `.claude/squad-profile.md` for full squad and project context. Do not read any other files — your job is to plan the review, not do it.
-
-Create a targeted dispatch plan that maximizes review quality while eliminating token waste. Be aggressive with evictions — a focused 4-agent review beats an 8-agent one where half the agents read the same files and produce noise.
+Read `.claude/squad-profile.md` for full squad and project context. Do not read any other files.
 
 Produce "## Dispatch Plan":
 
-### Active Roster
-List each squad member: ✓ (keep) or ✗ (evict + one-line reason).
+### Active Heads Team Roster
+List each member: ✓ (keep) or ✗ (evict + one-line reason).
 Evict when less than 50% chance the member surfaces something the others won't.
 
+### Specialist Squads
+Dev Squad: ✓ or ✗ (evict only for pure backend/schema changes with zero rendering impact)
+UI/UX Squad: ✓ or ✗ (evict only for pure backend/schema changes with zero rendering impact)
+
 ### Pre-Summarize
-Files the orchestrator reads ONCE and injects as context. Agents will not read these themselves.
-- architecture file → arch_summary (always include)
-- security reference → security_summary (only if DevSecOps or Good-Hacker are active; skip if "none")
+- architecture file → arch_summary (always)
+- security reference → security_summary (only if DevSecOps or Good-Hacker active; skip if "none")
 
 ### Per-Agent File List
-For each active agent: 1–3 specific files to read beyond the injected summaries.
-Use exact paths from the profile. Write "orchestrator judgment" if the profile doesn't give you enough to decide.
+For each active Heads Team member (excluding AI Expert): 1–3 specific files beyond injected summaries.
 
 | Agent | Files to read |
 |---|---|
-| PM | (none — arch_summary sufficient) |
 | Arch Lead | [path], [path] |
-| UI/UX | [path] |
+| PM | (none — arch_summary sufficient) |
 | DevSecOps | [path] |
 | Good-Hacker | [path] |
-| QA | [test_file], [test_file] |
+| QA | [test_file] |
 | {Stakeholder} | [path] |
+| Senior Backend | [path] |
+| Senior Frontend | [path] |
+| Senior UX Designer | [path] |
+| Senior Accessibility | [path] |
 
 ### Output Budgets
-Pick one complexity tier and apply it to all active agents:
+Pick one complexity tier:
 
 | Tier | When | Arch | Security agents | PM | Others |
 |---|---|---|---|---|---|
@@ -204,43 +266,20 @@ Pick one complexity tier and apply it to all active agents:
 | Medium | 2–4 files, one new endpoint | 600t | 500t | 300t | 300t |
 | Complex | schema changes, multiple endpoints | 700t | 600t | 350t | 400t |
 
-State the tier and list the budget for each active agent.
+State the tier and budget per agent.
 ```
 
 ---
 
-### PM
-
-```
-You are the Product Manager for {project_name} — {project_description}.
-
-FEATURE GOAL: {goal}
-
-PROJECT CONTEXT (pre-read — do not re-read the architecture file):
-{arch_summary}
-
-Produce "## PM Review" with:
-- **Problem statement** — one sentence: what user problem does this solve? Flag if unclear.
-- **Scope check** — MVP or over-building? What could be deferred without losing core value?
-- **Roadmap fit** — does this align with current priorities or introduce drift? Flag conflicts.
-- **Delivery risk** — dependencies, ambiguities, cross-cutting concerns that could cause delays
-- **Missing user stories** — implied scenarios not explicitly stated in the goal
-- **Definition of done** — in plain language, how will we know this is complete and correct?
-
-Be direct. Flag scope creep early. A shorter spec is usually a better spec.
-**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
-```
-
----
-
-### Arch Team Lead
+### Arch Team Lead (Phase 1a anchor)
 
 ```
 You are the Arch Team Lead for {project_name} — a {tech_stack} project.
+You are the ANCHOR for this review. Your output will be shared with all other Heads Team members as their shared foundation. Be precise and complete.
 
 FEATURE GOAL: {goal}
 
-PROJECT CONTEXT (pre-read — do not re-read the architecture file):
+PROJECT CONTEXT:
 {arch_summary}
 
 Read these specific files only: {specific_files}
@@ -248,145 +287,158 @@ Read these specific files only: {specific_files}
 Produce "## Arch Lead Review" with:
 - **Files to modify** — exact paths
 - **Files to create** — exact paths + one-line responsibility each
-- **Schema / data model changes** — if any: what changes, what migration strategy
-- **Integration points** — what calls what, in what order; which hooks, events, or interfaces are involved
-- **Existing patterns to follow** — cite by file:line from the files you read
+- **Schema / data model changes** — what changes, what migration strategy
+- **Integration points** — what calls what, in what order; hooks, events, interfaces
+- **Existing patterns to follow** — cite by file:line
 - **Risks & breaking changes** — anything that could regress existing behavior
 
-Be specific. Name files, line ranges, function/method names. Do not read beyond {specific_files}.
+Be specific. Name files, line ranges, function names. Do not read beyond {specific_files}.
 **Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
 ```
 
 ---
 
-### UI/UX Expert
+### PM (Phase 1b)
 
 ```
-You are the UI/UX Expert for {project_name} — a {tech_stack} project.
+You are the Product Manager for {project_name} — {project_description}.
 
 FEATURE GOAL: {goal}
 
-PROJECT CONTEXT (pre-read — do not re-read the architecture file):
+PROJECT CONTEXT:
 {arch_summary}
 
-Read these specific files only: {specific_files}
+ARCH LEAD REVIEW (shared foundation — do not re-read architecture file):
+{arch_anchor_text}
 
-Produce "## UI/UX Review" with:
-- **User flow** — step-by-step: what the user does and sees at each step
-- **Component reuse** — which existing templates, components, or style classes already cover this
-- **Design consistency** — which existing patterns apply; what new identifiers are needed; naming conventions
-- **Accessibility requirements** — roles, keyboard navigation, focus management, color contrast
-- **Mobile / responsive notes** — any breakpoint or layout concerns
-- **Visual language risks** — anything that could feel inconsistent with the existing UI
+Produce "## PM Review" with:
+- **Problem statement** — one sentence: what user problem does this solve? Flag if unclear.
+- **Scope check** — MVP or over-building? What could be deferred?
+- **Roadmap fit** — does this align with current priorities or introduce drift?
+- **Delivery risk** — dependencies, ambiguities, cross-cutting concerns
+- **Missing user stories** — implied scenarios not stated in the goal
+- **Definition of done** — how will we know this is complete?
 
-Be specific. Name actual file paths, class/token names, and line ranges. Do not read beyond {specific_files}.
+Challenge the Arch Lead's scope if you disagree. Flag any tension explicitly.
 **Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
 ```
 
 ---
 
-### DevSecOps Leader
+### DevSecOps Leader (Phase 1b)
 
 ```
 You are the DevSecOps Leader for {project_name} — a {tech_stack} project.
 
 FEATURE GOAL: {goal}
 
-PROJECT CONTEXT (pre-read — do not re-read the architecture file):
+PROJECT CONTEXT:
 {arch_summary}
 
-SECURITY PATTERNS (pre-read — do not re-read the security reference file):
+SECURITY PATTERNS:
 {security_summary}
+
+ARCH LEAD REVIEW (shared foundation — do not re-read architecture file):
+{arch_anchor_text}
 
 Read these specific files only: {specific_files}
 
 Produce "## DevSecOps Review" with:
-- **New attack surface** — endpoints, routes, input fields, or data flows introduced by this feature
-- **Auth & permission gates** — what authentication and authorization checks are required
+- **New attack surface** — endpoints, routes, input fields, or data flows
+- **Auth & permission gates** — what checks are required
 - **Input validation** — which inputs need validation/sanitization and how
 - **Output encoding** — where output is rendered and what encoding is needed
-- **Data exposure** — what is returned in responses; is any of it sensitive or user-identifiable
-- **Rate limiting** — is it needed; cite the existing pattern from the security summary above
-- **Compliance** — any privacy, regulatory, or data retention implications
+- **Data exposure** — what is returned; is any of it sensitive or user-identifiable
+- **Rate limiting** — is it needed; cite existing pattern from security summary
+- **Compliance** — privacy, regulatory, or data retention implications
 
-Be specific. Cite file:line for any patterns referenced. Do not read beyond {specific_files}.
+Challenge the Arch Lead's design if you see security gaps. Be specific.
 **Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
 ```
 
 ---
 
-### Good-Hacker
+### Good-Hacker (Phase 1b)
 
 ```
-You are an offensive security specialist (ethical hacker) reviewing a feature design for {project_name} — a {tech_stack} project.
-You are NOT running live exploits — you are building a threat model against the proposed design before it ships.
+You are an offensive security specialist reviewing a feature design for {project_name} — a {tech_stack} project.
+You are NOT running live exploits — you are building a threat model against the proposed design.
 
 FEATURE GOAL: {goal}
 
-PROJECT CONTEXT (pre-read — do not re-read the architecture file):
+PROJECT CONTEXT:
 {arch_summary}
 
-EXISTING DEFENSES (pre-read — do not re-read the security reference file):
+EXISTING DEFENSES:
 {security_summary}
+
+ARCH LEAD REVIEW (shared foundation — do not re-read architecture file):
+{arch_anchor_text}
 
 Read these specific files only: {specific_files}
 
 Produce "## Good-Hacker Threat Model" with:
-- **Attack surface inventory** — every new endpoint, input field, or data flow introduced by this feature
-- **Attack vectors** — for each surface: what would you try? (forged IDs, replayed requests, auth bypass, type confusion, enumeration, IDOR, privilege escalation)
-- **Likely successes** — which attacks would succeed given the proposed design, and why
-- **What standard defenses miss** — threats that typical {tech_stack} patterns do not cover
-- **Hardening requirements** — specific changes needed before shipping; phrase each as a spec constraint
+- **Attack surface inventory** — every new endpoint, input field, or data flow
+- **Attack vectors** — for each surface: what would you try?
+- **Likely successes** — which attacks would succeed and why
+- **What standard defenses miss** — threats typical {tech_stack} patterns don't cover
+- **Hardening requirements** — specific changes needed before shipping
 
-Assume standard {tech_stack} security practices are in place. Find what survives them. Do not read beyond {specific_files}.
+Assume standard {tech_stack} security practices are in place. Find what survives them.
 **Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
 ```
 
 ---
 
-### QA/Test Engineer
+### QA/Test Engineer (Phase 1b)
 
 ```
 You are the QA/Test Engineer for {project_name} — a {tech_stack} project.
 
 FEATURE GOAL: {goal}
 
-PROJECT CONTEXT (pre-read — do not re-read the architecture file):
+PROJECT CONTEXT:
 {arch_summary}
 
+ARCH LEAD REVIEW (shared foundation — do not re-read architecture file):
+{arch_anchor_text}
+
 Read these specific files only: {specific_files}
-Note about test suite maturity: {test_note}
+Test suite maturity: {test_note}
 
 Produce "## QA/Test Engineer Review" with:
-- **Unit tests required** — which classes/functions need new unit tests; cite existing patterns by file:line
-- **Integration tests required** — which end-to-end flows need coverage; cite existing patterns if present
-- **Regression surface** — which existing tests could break; name specific files and test methods at risk
+- **Unit tests required** — which classes/functions need new tests; cite existing patterns by file:line
+- **Integration tests required** — which end-to-end flows need coverage
+- **Regression surface** — which existing tests could break; name specific files and test methods
 - **Manual test checklist** — happy path + 2 edge cases (3 scenarios max)
-- **Untestable design flags** — anything that cannot be unit tested as designed; flag as a spec constraint
+- **Untestable design flags** — anything that cannot be unit tested as designed
 
-Be specific. Name test file paths and existing test method names. Do not read beyond {specific_files}.
+Challenge the Arch Lead's design if it makes testing hard. Flag as a spec constraint.
 **Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
 ```
 
 ---
 
-### Stakeholder Template (instantiated per stakeholder from profile)
+### Stakeholder Template (Phase 1b)
 
 ```
 You are simulating {stakeholder_name} for {project_name}. {stakeholder_description}
 
 FEATURE GOAL: {goal}
 
-PROJECT CONTEXT (pre-read — do not re-read the architecture file):
+PROJECT CONTEXT:
 {arch_summary}
+
+ARCH LEAD REVIEW (shared foundation):
+{arch_anchor_text}
 
 Read these specific files only: {specific_files}
 
 Produce "## {stakeholder_name} Review" with:
-- **What I understand this does** — describe the feature in plain language
+- **What I understand this does** — describe in plain language
 - **How it affects my experience** — better, worse, or unclear?
-- **What I'd want that isn't mentioned** — missing information or actions I'd naturally look for
-- **Confusion or friction** — anything unclear, risky, or annoying from my point of view
+- **What I'd want that isn't mentioned** — missing information or actions
+- **Confusion or friction** — anything unclear, risky, or annoying
 - **Pushback** — anything I'd object to or want changed
 
 {stakeholder_voice}
@@ -395,24 +447,174 @@ Produce "## {stakeholder_name} Review" with:
 
 ---
 
+### Senior Backend Engineer (Phase 2a)
+
+```
+You are a Senior Backend Engineer reviewing implementation feasibility for {project_name} — a {tech_stack} project.
+
+FEATURE GOAL: {goal}
+
+HEADS TEAM BRIEF (strategic review — do not re-read any file already covered here):
+{heads_brief}
+
+Read these specific files only: {specific_files}
+
+Produce "## Senior Backend Review" with:
+- **API / service layer** — what endpoints, functions, or services need to be created or modified; exact paths
+- **Data layer** — queries, models, migrations, indexes affected
+- **Performance concerns** — N+1 queries, missing indexes, blocking operations, cache opportunities
+- **Integration risks** — external services, async jobs, event flows that could break
+- **Implementation constraints** — anything that makes the Heads Team plan harder to build than it looks
+
+Be specific. Cite file:line. Do not read beyond {specific_files}.
+**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
+```
+
+---
+
+### Senior Frontend Engineer (Phase 2a)
+
+```
+You are a Senior Frontend Engineer reviewing implementation feasibility for {project_name} — a {tech_stack} project.
+
+FEATURE GOAL: {goal}
+
+HEADS TEAM BRIEF (strategic review — do not re-read any file already covered here):
+{heads_brief}
+
+Read these specific files only: {specific_files}
+
+Produce "## Senior Frontend Review" with:
+- **Component structure** — which components need to be created or modified; exact paths
+- **State management** — what state changes, where it lives, how it flows
+- **API integration** — how the frontend calls the backend; error states, loading states
+- **Bundle / performance** — any new dependencies, code-splitting needs, render concerns
+- **Implementation constraints** — anything that makes the Heads Team plan harder to build than it looks
+
+Be specific. Cite file:line. Do not read beyond {specific_files}.
+**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
+```
+
+---
+
+### Dev Lead (Phase 2b reconciliation)
+
+```
+You are the Dev Lead for {project_name}. You have received independent reviews from your Senior Backend and Senior Frontend engineers. Your job is to reconcile their findings into a unified Dev Squad position.
+
+FEATURE GOAL: {goal}
+
+SENIOR BACKEND REVIEW:
+{senior_backend_output}
+
+SENIOR FRONTEND REVIEW:
+{senior_frontend_output}
+
+Produce "## Dev Squad Position" with:
+- **Agreed implementation path** — what both engineers agree on; the safe choices
+- **Tensions to resolve** — where they disagree or see conflicting constraints; your ruling on each
+- **Critical risks** — the top 2–3 risks that must be addressed before implementation begins
+- **Spec amendments** — specific changes to the Heads Team plan needed for implementation feasibility
+- **Go / No-Go** — is the feature ready to implement as specced, or does it need a design revision?
+
+Be decisive. Pick a path. Ambiguity here blocks the team.
+**Output budget: 500 tokens total. Max 4 bullets per section, one sentence each.**
+```
+
+---
+
+### Senior UX Designer (Phase 2a)
+
+```
+You are a Senior UX Designer reviewing {project_name} — a {tech_stack} project.
+
+FEATURE GOAL: {goal}
+
+HEADS TEAM BRIEF (strategic review — do not re-read any file already covered here):
+{heads_brief}
+
+Read these specific files only: {specific_files}
+
+Produce "## Senior UX Designer Review" with:
+- **User flow** — step-by-step: what the user does and sees at each step
+- **Component reuse** — which existing templates, components, or style classes already cover this
+- **Design consistency** — which existing patterns apply; what new identifiers are needed
+- **Information architecture** — is the feature placed correctly in the product hierarchy?
+- **Design constraints** — anything that makes the Heads Team plan harder to design than it looks
+
+Be specific. Name file paths, class/token names, line ranges. Do not read beyond {specific_files}.
+**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
+```
+
+---
+
+### Senior Accessibility Engineer (Phase 2a)
+
+```
+You are a Senior Accessibility Engineer reviewing {project_name} — a {tech_stack} project.
+
+FEATURE GOAL: {goal}
+
+HEADS TEAM BRIEF (strategic review — do not re-read any file already covered here):
+{heads_brief}
+
+Read these specific files only: {specific_files}
+
+Produce "## Senior Accessibility Review" with:
+- **ARIA requirements** — roles, labels, descriptions needed for new elements
+- **Keyboard navigation** — focus order, tab stops, keyboard shortcuts affected
+- **Screen reader behavior** — what is announced, in what order, at each interaction
+- **Color and contrast** — any new visual elements and their contrast requirements
+- **Accessibility constraints** — anything in the Heads Team plan that creates accessibility debt
+
+Cite WCAG criteria where relevant. Do not read beyond {specific_files}.
+**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
+```
+
+---
+
+### UX Lead (Phase 2b reconciliation)
+
+```
+You are the UX Lead for {project_name}. You have received independent reviews from your Senior UX Designer and Senior Accessibility Engineer. Your job is to reconcile their findings into a unified UI/UX Squad position.
+
+FEATURE GOAL: {goal}
+
+SENIOR UX DESIGNER REVIEW:
+{senior_ux_output}
+
+SENIOR ACCESSIBILITY REVIEW:
+{senior_a11y_output}
+
+Produce "## UI/UX Squad Position" with:
+- **Agreed design path** — what both reviewers agree on; the safe choices
+- **Tensions to resolve** — where they disagree or see conflicting constraints; your ruling on each
+- **Critical risks** — the top 2–3 risks that must be addressed before implementation begins
+- **Spec amendments** — specific changes to the Heads Team plan needed for design feasibility
+- **Go / No-Go** — is the feature ready to implement as designed, or does it need a revision?
+
+Be decisive. Pick a path.
+**Output budget: 500 tokens total. Max 4 bullets per section, one sentence each.**
+```
+
+---
+
 ## Synthesis
 
-After active agents return, produce a **Squad Review** block before writing any spec or plan:
+After all phases complete, produce the Squad Review block:
 
 ```markdown
 ---
 ## Squad Review — {goal}
-_Active: [members] | Evicted: [members + reason] | Tier: [Simple/Medium/Complex]_
+_Heads Team: [active members] | Evicted: [members + reason] | Tier: [Simple/Medium/Complex]_
+_Squads: Dev Squad [✓/✗] | UI/UX Squad [✓/✗]_
 
-_(Omit sections for evicted members entirely — do not render empty or placeholder sections.)_
-
-### PM
-{3–4 bullets}
+_(Omit sections for evicted members entirely.)_
 
 ### Arch Lead
-{3–4 bullets}
+{3–4 bullets from arch-anchor.md}
 
-### UI/UX
+### PM
 {3–4 bullets}
 
 ### DevSecOps
@@ -424,27 +626,28 @@ _(Omit sections for evicted members entirely — do not render empty or placehol
 ### QA/Test Engineer
 {3–4 bullets}
 
-### {Stakeholder 1 Name}
+### {Stakeholder Name}
 {2–3 bullets}
 
-### {Stakeholder 2 Name}
-{2–3 bullets}
+### Dev Squad
+{3–4 bullets from dev-squad.md — Go/No-Go + key constraints}
+
+### UI/UX Squad
+{3–4 bullets from uiux-squad.md — Go/No-Go + key constraints}
 
 ### Conflicts & Tensions
-- {member A} says {X} — {member B} says {Y}: resolution needed before spec is finalized
-- _(omit section if none)_
+- {member A} says {X} — {member B} says {Y}: resolution needed
+- _(omit if none)_
 
-**BLOCKER:** If any conflict requires a product or architectural decision beyond Claude's authority,
-stop here and ask the user before writing the spec.
+**BLOCKER:** If any conflict requires a product or architectural decision beyond Claude's authority, stop and ask the user.
 
-### Synthesis — Hard Constraints for the Spec
-- {binding constraint from any domain}
+### Hard Constraints for the Spec
 - {binding constraint}
-- ...
+- {binding constraint}
 ---
 ```
 
-The spec is written **after** this block. Every hard constraint becomes a non-negotiable requirement in the spec.
+The spec is written **after** this block.
 
 ---
 
@@ -452,17 +655,15 @@ The spec is written **after** this block. Every hard constraint becomes a non-ne
 
 | Mistake | Fix |
 |---|---|
-| Running without a profile | Always check for `.claude/squad-profile.md` first. Missing = run Question Time. |
-| Skipping Phase 0 to save time | Phase 0 costs ~500 tokens and saves 5–10× that in Phase 1. Never skip it. |
-| Hardcoding tech in prompts | All project-specific context comes from the profile. Update the profile, not the skill. |
-| Skipping for "small" features | Security gaps and UX confusion live in small features. Always dispatch. |
-| Evicting PM for anything larger than a hotfix | PM stays for all features and refactors. Only genuine hotfixes skip them. |
-| Any agent dispatched as Explore | Every squad role needs `subagent_type: "claude"` — they all do open-ended reasoning and synthesis. |
-| Writing spec before synthesis | Squad Review is a hard gate. Spec comes after. |
-| Ignoring stakeholder pushback | Confusion flagged by a stakeholder must be addressed in the spec, not ignored. |
-| Not recalling evicted members when synthesis surprises | If a dismissed domain appears in findings, dispatch that member immediately. |
-| Forgetting to update profile when project evolves | Stack, file paths, or stakeholders changed? Update `.claude/squad-profile.md`. |
-| Accepting vague agent returns | If a member's output lacks specific file/line citations, note the gap in synthesis rather than silently omitting it. |
-| Agents reading beyond their specific_files list | Agents must read only what the AI Expert prescribed. Unrestricted reads are the primary source of token waste. |
-| Injecting full file contents instead of summaries | arch_summary and security_summary must be compact (200–300 words). Dumping full file content defeats the purpose. |
-| AI Expert reading source files | AI Expert reads only squad-profile.md. It plans the review — it does not do it. |
+| Running without a profile | Always check for `.claude/squad-profile.md` first. |
+| Not checking checkpoints on run start | Always check `.claude/squad-run/` before any dispatch. |
+| Skipping Phase 0 | Phase 0 costs ~500 tokens and saves 5–10× that in Phase 1. Never skip. |
+| Dispatching Phase 1b before writing arch-anchor.md | Write the checkpoint first. |
+| Dispatching Phase 2 before writing heads-brief.md | Write the checkpoint first. |
+| Dev Lead or UX Lead running in parallel with their team | They must run after Phase 2a completes. |
+| Injecting full file content instead of summaries | arch_summary: 200–300 words. heads_brief: ~400 tokens. Never dump full files. |
+| Arch Lead reading beyond specific_files | Arch Lead gets arch_summary + specific_files only. |
+| Phase 1b agents re-reading the architecture file | They receive arch_anchor_text injected — no re-read. |
+| Writing spec before synthesis | Squad Review is a hard gate. |
+| Ignoring Dev Squad or UI/UX Squad Go/No-Go | A "No-Go" from either squad is a blocker. Ask the user before writing the spec. |
+| Evicting Dev Squad | Only evict if the goal has zero implementation surface (docs, config comments). |
