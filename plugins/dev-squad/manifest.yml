@@ -1,0 +1,24 @@
+name: dev-squad
+type: skill
+version: 1.1.0
+author: Djacomo
+description: >
+  Standalone Dev Squad mini round table for bugs and small features.
+  Dispatches Senior Backend and Senior Frontend engineers in parallel,
+  then a Dev Lead reconciles findings into a unified position with Go/No-Go signal.
+  Skips the full Heads Team — use /squad-planning for strategic review.
+
+stack:
+  - any
+
+level:
+  - mid
+  - senior
+  - architect
+
+claude-code-version: ">=1.0.0"
+tested-on:
+  - macOS
+
+cost:
+  level: free
