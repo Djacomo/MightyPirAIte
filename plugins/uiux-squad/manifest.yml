@@ -1,0 +1,24 @@
+name: uiux-squad
+type: skill
+version: 1.1.0
+author: Djacomo
+description: >
+  Standalone UI/UX Squad mini round table for UI tweaks, flow questions, and accessibility fixes.
+  Dispatches Senior UX Designer and Senior Accessibility Engineer in parallel,
+  then a UX Lead reconciles findings into a unified position with Go/No-Go signal.
+  Skips the full Heads Team — use /squad-planning for strategic review.
+
+stack:
+  - any
+
+level:
+  - mid
+  - senior
+  - architect
+
+claude-code-version: ">=1.0.0"
+tested-on:
+  - macOS
+
+cost:
+  level: free
