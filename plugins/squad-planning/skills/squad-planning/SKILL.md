@@ -10,7 +10,7 @@ description: Use when starting any planning, spec, or handoff writing activity �
 Squad Planning runs a **three-tier Tavola Rotonda** before any spec or plan is written.
 
 - **Tier 1 — Heads Team**: Strategic, cross-cutting review. Produces the "Heads Brief".
-- **Tier 2 — Specialist Squads**: Dev Squad and UI/UX Squad receive the Brief and go deep in their domain via a mini round table.
+- **Tier 2 — Specialist Squads**: Dev Squad (Backend + Frontend + Accessibility) and Creative Squad (UX + Brand + Campaign) receive the Brief and go deep in their domain via a mini round table.
 - **Tier 3 — Documentation Expert**: Reads all squad outputs and the Heads Brief, then produces a unified documentation plan covering every domain.
 
 **This skill is project-agnostic.** All project-specific context lives in `.claude/squad-profile.md`.
@@ -78,7 +78,7 @@ On every run, before dispatching anything, check `.claude/squad-run/` for existi
 | `arch-anchor.md` | Phase 1a — Arch Lead output |
 | `heads-brief.md` | Phase 1b — Heads Team compressed brief |
 | `dev-squad.md` | Phase 2 — Dev Squad unified position |
-| `uiux-squad.md` | Phase 2 — UI/UX Squad unified position |
+| `creative-squad.md` | Phase 2 — Creative Squad unified position |
 | `doc-expert.md` | Phase 3 — Documentation Expert plan |
 | `synthesis.md` | Final synthesis |
 
@@ -97,7 +97,7 @@ For a fresh run (no checkpoints), announce:
 Fresh squad run.
 Phase 0: AI Expert dispatched.
 Heads Team roster: PM ✓ | Arch Lead ✓ | DevSecOps ✓ | Good-Hacker ✓ | QA ✓ | {Stakeholder 1} ✗ (reason)
-Phase 2: Dev Squad ✓ | UI/UX Squad ✓
+Phase 2: Dev Squad ✓ | Creative Squad ✓
 Phase 3: Doc Expert ✓
 ```
 
@@ -139,19 +139,20 @@ Both squads always run after the Heads Team in a full cascade. Evict a squad onl
 |---|---|
 | Senior Backend Engineer | Phase 2a — parallel |
 | Senior Frontend Engineer | Phase 2a — parallel |
-| Dev Lead | Phase 2b — reconciliation (reads both 2a outputs) |
+| Senior Accessibility Engineer | Phase 2a — parallel |
+| Dev Lead | Phase 2b — reconciliation (reads all 2a outputs) |
 
-### UI/UX Squad
+### Creative Squad
 
 | Role | Phase |
 |---|---|
 | Senior UX Designer | Phase 2a — parallel |
-| Senior Accessibility Engineer | Phase 2a — parallel |
-| UX Lead | Phase 2b — reconciliation (reads both 2a outputs) |
+| Senior Brand Designer | Phase 2a — parallel |
+| Creative Lead | Phase 2b — reconciliation (reads both 2a outputs) |
 
 ### Documentation Expert (Phase 3)
 
-Runs solo after both squads complete. Receives `heads-brief.md` + `dev-squad.md` + `uiux-squad.md` and produces a unified documentation plan. Evict only when the goal is a pure internal refactor with zero user-facing surface.
+Runs solo after both squads complete. Receives `heads-brief.md` + `dev-squad.md` + `creative-squad.md` and produces a unified documentation plan. Evict only when the goal is a pure internal refactor with zero user-facing surface.
 
 ---
 
@@ -184,33 +185,33 @@ Runs solo after both squads complete. Receives `heads-brief.md` + `dev-squad.md`
 
 ### Phase 2 — Specialist Squads (parallel squads, sequential within each)
 
-Dev Squad and UI/UX Squad are dispatched to start **at the same time**. Within each squad, Phase 2b waits for Phase 2a.
+Dev Squad and Creative Squad are dispatched to start **at the same time**. Within each squad, Phase 2b waits for Phase 2a.
 
 **Dev Squad:**
 1. Check `.claude/squad-run/dev-squad.md` — if exists, restore and skip.
 2. Read `heads-brief.md` as `{heads_brief}`.
-3. Phase 2a: Dispatch Senior Backend Engineer + Senior Frontend Engineer in parallel. Both receive `{heads_brief}`.
-4. Phase 2b: Dispatch Dev Lead alone. Receives both Phase 2a outputs.
+3. Phase 2a: Dispatch Senior Backend Engineer + Senior Frontend Engineer + Senior Accessibility Engineer in parallel. All receive `{heads_brief}`.
+4. Phase 2b: Dispatch Dev Lead alone. Receives all three Phase 2a outputs.
 5. **Write checkpoint:** `.claude/squad-run/dev-squad.md` ← Dev Lead output.
 
-**UI/UX Squad (in parallel with Dev Squad):**
-1. Check `.claude/squad-run/uiux-squad.md` — if exists, restore and skip.
+**Creative Squad (in parallel with Dev Squad):**
+1. Check `.claude/squad-run/creative-squad.md` — if exists, restore and skip.
 2. Read `heads-brief.md` as `{heads_brief}`.
-3. Phase 2a: Dispatch Senior UX Designer + Senior Accessibility Engineer in parallel. Both receive `{heads_brief}`.
-4. Phase 2b: Dispatch UX Lead alone. Receives both Phase 2a outputs.
-5. **Write checkpoint:** `.claude/squad-run/uiux-squad.md` ← UX Lead output.
+3. Phase 2a: Dispatch Senior UX Designer + Senior Brand Designer in parallel. Both receive `{heads_brief}`.
+4. Phase 2b: Dispatch Creative Lead alone. Receives both Phase 2a outputs.
+5. **Write checkpoint:** `.claude/squad-run/creative-squad.md` ← Creative Lead output.
 
 ### Phase 3 — Documentation Expert (serial)
 
 1. Check `.claude/squad-run/doc-expert.md` — if exists, restore and skip.
-2. Read `heads-brief.md`, `dev-squad.md`, `uiux-squad.md` as context.
+2. Read `heads-brief.md`, `dev-squad.md`, `creative-squad.md` as context.
 3. Dispatch **Documentation Expert** alone as a single foreground `Agent` call.
 4. **Write checkpoint:** `.claude/squad-run/doc-expert.md` ← Doc Expert full output.
 
 ### Synthesis
 
 1. Check `.claude/squad-run/synthesis.md` — if exists, restore and present.
-2. Read all checkpoint files: `dispatch-plan.md`, `arch-anchor.md`, `heads-brief.md`, `dev-squad.md`, `uiux-squad.md`, `doc-expert.md`.
+2. Read all checkpoint files: `dispatch-plan.md`, `arch-anchor.md`, `heads-brief.md`, `dev-squad.md`, `creative-squad.md`, `doc-expert.md`.
 3. Produce Squad Review block (see Synthesis section below).
 4. **Write checkpoint:** `.claude/squad-run/synthesis.md`.
 
@@ -248,8 +249,8 @@ List each member: ✓ (keep) or ✗ (evict + one-line reason).
 Evict when less than 50% chance the member surfaces something the others won't.
 
 ### Specialist Squads
-Dev Squad: ✓ or ✗ (evict only for pure backend/schema changes with zero rendering impact)
-UI/UX Squad: ✓ or ✗ (evict only for pure backend/schema changes with zero rendering impact)
+Dev Squad: ✓ or ✗ (evict only for pure doc/config changes with zero code or rendering impact)
+Creative Squad: ✓ or ✗ (evict only for pure backend/schema/infra changes with zero user-facing surface)
 Doc Expert: ✓ or ✗ (evict only for pure internal refactors with zero user-facing surface)
 
 ### Pre-Summarize
@@ -270,6 +271,7 @@ For each active Heads Team member (excluding AI Expert): 1–3 specific files be
 | Senior Backend | [path] |
 | Senior Frontend | [path] |
 | Senior UX Designer | [path] |
+| Senior Brand Designer | [path] |
 | Senior Accessibility | [path] |
 
 ### Output Budgets
@@ -515,7 +517,7 @@ Be specific. Cite file:line. Do not read beyond {specific_files}.
 ### Dev Lead (Phase 2b reconciliation)
 
 ```
-You are the Dev Lead for {project_name}. You have received independent reviews from your Senior Backend and Senior Frontend engineers. Your job is to reconcile their findings into a unified Dev Squad position.
+You are the Dev Lead for {project_name}. You have received independent reviews from your Senior Backend, Senior Frontend, and Senior Accessibility engineers. Your job is to reconcile their findings into a unified Dev Squad position.
 
 FEATURE GOAL: {goal}
 
@@ -525,8 +527,11 @@ SENIOR BACKEND REVIEW:
 SENIOR FRONTEND REVIEW:
 {senior_frontend_output}
 
+SENIOR ACCESSIBILITY REVIEW:
+{senior_accessibility_output}
+
 Produce "## Dev Squad Position" with:
-- **Agreed implementation path** — what both engineers agree on; the safe choices
+- **Agreed implementation path** — what all three engineers agree on; the safe choices
 - **Tensions to resolve** — where they disagree or see conflicting constraints; your ruling on each
 - **Critical risks** — the top 2–3 risks that must be addressed before implementation begins
 - **Spec amendments** — specific changes to the Heads Team plan needed for implementation feasibility
@@ -538,7 +543,32 @@ Be decisive. Pick a path. Ambiguity here blocks the team.
 
 ---
 
-### Senior UX Designer (Phase 2a)
+### Senior Accessibility Engineer (Phase 2a — Dev Squad)
+
+```
+You are a Senior Accessibility Engineer reviewing {project_name} — a {tech_stack} project.
+
+FEATURE GOAL: {goal}
+
+HEADS TEAM BRIEF (strategic review — do not re-read any file already covered here):
+{heads_brief}
+
+Read these specific files only: {specific_files}
+
+Produce "## Senior Accessibility Review" with:
+- **ARIA requirements** — roles, labels, descriptions needed for new elements
+- **Keyboard navigation** — focus order, tab stops, keyboard shortcuts affected
+- **Screen reader behavior** — what is announced, in what order, at each interaction
+- **Color and contrast** — any new visual elements and their contrast requirements
+- **Implementation constraints** — anything that makes this harder or creates technical accessibility debt
+
+Cite WCAG criteria where relevant. Do not read beyond {specific_files}.
+**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
+```
+
+---
+
+### Senior UX Designer (Phase 2a — Creative Squad)
 
 ```
 You are a Senior UX Designer reviewing {project_name} — a {tech_stack} project.
@@ -563,10 +593,11 @@ Be specific. Name file paths, class/token names, line ranges. Do not read beyond
 
 ---
 
-### Senior Accessibility Engineer (Phase 2a)
+### Senior Brand Designer (Phase 2a — Creative Squad)
 
 ```
-You are a Senior Accessibility Engineer reviewing {project_name} — a {tech_stack} project.
+You are a Senior Brand Designer and Marketing Creative for {project_name} — a {tech_stack} project.
+You are NOT reviewing the product UI — you are reviewing the promotional and brand dimension of this feature.
 
 FEATURE GOAL: {goal}
 
@@ -575,40 +606,40 @@ HEADS TEAM BRIEF (strategic review — do not re-read any file already covered h
 
 Read these specific files only: {specific_files}
 
-Produce "## Senior Accessibility Review" with:
-- **ARIA requirements** — roles, labels, descriptions needed for new elements
-- **Keyboard navigation** — focus order, tab stops, keyboard shortcuts affected
-- **Screen reader behavior** — what is announced, in what order, at each interaction
-- **Color and contrast** — any new visual elements and their contrast requirements
-- **Accessibility constraints** — anything in the Heads Team plan that creates accessibility debt
+Produce "## Senior Brand Designer Review" with:
+- **Promotional angle** — what is the one emotional hook that makes a customer care about this feature?
+- **Visual identity** — what assets need to be created (hero image, icon, banner, social card)? Which existing brand elements apply?
+- **Campaign story** — what is the narrative arc? Problem → solution → outcome in one sentence each.
+- **Copy requirements** — tagline, feature name, description copy, changelog entry tone
+- **Brand risks** — anything in the Heads Team plan that could feel off-brand, confusing, or hard to market
 
-Cite WCAG criteria where relevant. Do not read beyond {specific_files}.
+Be specific. If the goal is internal or non-user-facing, flag it explicitly and keep output minimal.
 **Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
 ```
 
 ---
 
-### UX Lead (Phase 2b reconciliation)
+### Creative Lead (Phase 2b reconciliation)
 
 ```
-You are the UX Lead for {project_name}. You have received independent reviews from your Senior UX Designer and Senior Accessibility Engineer. Your job is to reconcile their findings into a unified UI/UX Squad position.
+You are the Creative Lead for {project_name}. You have received independent reviews from your Senior UX Designer and Senior Brand Designer. Your job is to reconcile their findings into a unified Creative Squad position that covers both product experience and promotional strategy.
 
 FEATURE GOAL: {goal}
 
 SENIOR UX DESIGNER REVIEW:
 {senior_ux_output}
 
-SENIOR ACCESSIBILITY REVIEW:
-{senior_a11y_output}
+SENIOR BRAND DESIGNER REVIEW:
+{senior_brand_output}
 
-Produce "## UI/UX Squad Position" with:
-- **Agreed design path** — what both reviewers agree on; the safe choices
-- **Tensions to resolve** — where they disagree or see conflicting constraints; your ruling on each
-- **Critical risks** — the top 2–3 risks that must be addressed before implementation begins
-- **Spec amendments** — specific changes to the Heads Team plan needed for design feasibility
-- **Go / No-Go** — is the feature ready to implement as designed, or does it need a revision?
+Produce "## Creative Squad Position" with:
+- **Unified creative direction** — the design and brand choices both reviewers agree on
+- **Tensions to resolve** — where product UX and brand pull in different directions; your ruling on each
+- **Critical risks** — the top 2–3 creative risks before implementation begins
+- **Spec amendments** — specific changes to the Heads Team plan needed for creative feasibility
+- **Go / No-Go** — is this ready to design and promote as stated, or does it need a revision?
 
-Be decisive. Pick a path.
+Be decisive. The Creative Squad speaks with one voice.
 **Output budget: 500 tokens total. Max 4 bullets per section, one sentence each.**
 ```
 
@@ -629,8 +660,8 @@ HEADS TEAM BRIEF:
 DEV SQUAD POSITION:
 {dev_squad_output}
 
-UI/UX SQUAD POSITION:
-{uiux_squad_output}
+CREATIVE SQUAD POSITION:
+{creative_squad_output}
 
 Produce "## Documentation Plan" with:
 - **What must be created** — new docs, READMEs, SKILL.md files, API references, changelogs; exact file paths
@@ -653,7 +684,7 @@ After all phases complete, produce the Squad Review block:
 ---
 ## Squad Review — {goal}
 _Heads Team: [active members] | Evicted: [members + reason] | Tier: [Simple/Medium/Complex]_
-_Squads: Dev Squad [✓/✗] | UI/UX Squad [✓/✗]_
+_Squads: Dev Squad [✓/✗] | Creative Squad [✓/✗]_
 
 _(Omit sections for evicted members entirely.)_
 
@@ -678,8 +709,8 @@ _(Omit sections for evicted members entirely.)_
 ### Dev Squad
 {3–4 bullets from dev-squad.md — Go/No-Go + key constraints}
 
-### UI/UX Squad
-{3–4 bullets from uiux-squad.md — Go/No-Go + key constraints}
+### Creative Squad
+{3–4 bullets from creative-squad.md — Go/No-Go + key constraints}
 
 ### Documentation Expert
 {3–4 bullets from doc-expert.md — what must be created/updated + key risks}
@@ -714,8 +745,9 @@ The spec is written **after** this block.
 | Arch Lead reading beyond specific_files | Arch Lead gets arch_summary + specific_files only. |
 | Phase 1b agents re-reading the architecture file | They receive arch_anchor_text injected — no re-read. |
 | Writing spec before synthesis | Squad Review is a hard gate. |
-| Ignoring Dev Squad or UI/UX Squad Go/No-Go | A "No-Go" from either squad is a blocker. Ask the user before writing the spec. |
+| Ignoring Dev Squad or Creative Squad Go/No-Go | A "No-Go" from either squad is a blocker. Ask the user before writing the spec. |
 | Evicting Dev Squad | Only evict if the goal has zero implementation surface (docs, config comments). |
+| Evicting Creative Squad for backend-only changes | Creative Squad stays for any feature with a user-facing or brand surface; evict only for pure backend/schema/infra work. |
 | Evicting Doc Expert for features | Doc Expert stays for all features; only evict for pure internal refactors. |
 | Doc Expert reading source files | Doc Expert receives injected squad outputs — it does not read code files. |
-| Dispatching Doc Expert before Phase 2 completes | Doc Expert must run after both dev-squad.md and uiux-squad.md are written. |
+| Dispatching Doc Expert before Phase 2 completes | Doc Expert must run after both dev-squad.md and creative-squad.md are written. |
