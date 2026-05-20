@@ -7,10 +7,11 @@ description: Use when starting any planning, spec, or handoff writing activity �
 
 ## Overview
 
-Squad Planning runs a **two-tier Tavola Rotonda** before any spec or plan is written.
+Squad Planning runs a **three-tier Tavola Rotonda** before any spec or plan is written.
 
 - **Tier 1 — Heads Team**: Strategic, cross-cutting review. Produces the "Heads Brief".
 - **Tier 2 — Specialist Squads**: Dev Squad and UI/UX Squad receive the Brief and go deep in their domain via a mini round table.
+- **Tier 3 — Documentation Expert**: Reads all squad outputs and the Heads Brief, then produces a unified documentation plan covering every domain.
 
 **This skill is project-agnostic.** All project-specific context lives in `.claude/squad-profile.md`.
 
@@ -78,6 +79,7 @@ On every run, before dispatching anything, check `.claude/squad-run/` for existi
 | `heads-brief.md` | Phase 1b — Heads Team compressed brief |
 | `dev-squad.md` | Phase 2 — Dev Squad unified position |
 | `uiux-squad.md` | Phase 2 — UI/UX Squad unified position |
+| `doc-expert.md` | Phase 3 — Documentation Expert plan |
 | `synthesis.md` | Final synthesis |
 
 **Announce restored vs. dispatched:**
@@ -96,6 +98,7 @@ Fresh squad run.
 Phase 0: AI Expert dispatched.
 Heads Team roster: PM ✓ | Arch Lead ✓ | DevSecOps ✓ | Good-Hacker ✓ | QA ✓ | {Stakeholder 1} ✗ (reason)
 Phase 2: Dev Squad ✓ | UI/UX Squad ✓
+Phase 3: Doc Expert ✓
 ```
 
 ---
@@ -146,6 +149,10 @@ Both squads always run after the Heads Team in a full cascade. Evict a squad onl
 | Senior Accessibility Engineer | Phase 2a — parallel |
 | UX Lead | Phase 2b — reconciliation (reads both 2a outputs) |
 
+### Documentation Expert (Phase 3)
+
+Runs solo after both squads complete. Receives `heads-brief.md` + `dev-squad.md` + `uiux-squad.md` and produces a unified documentation plan. Evict only when the goal is a pure internal refactor with zero user-facing surface.
+
 ---
 
 ## Dispatch Pattern
@@ -193,10 +200,17 @@ Dev Squad and UI/UX Squad are dispatched to start **at the same time**. Within e
 4. Phase 2b: Dispatch UX Lead alone. Receives both Phase 2a outputs.
 5. **Write checkpoint:** `.claude/squad-run/uiux-squad.md` ← UX Lead output.
 
+### Phase 3 — Documentation Expert (serial)
+
+1. Check `.claude/squad-run/doc-expert.md` — if exists, restore and skip.
+2. Read `heads-brief.md`, `dev-squad.md`, `uiux-squad.md` as context.
+3. Dispatch **Documentation Expert** alone as a single foreground `Agent` call.
+4. **Write checkpoint:** `.claude/squad-run/doc-expert.md` ← Doc Expert full output.
+
 ### Synthesis
 
 1. Check `.claude/squad-run/synthesis.md` — if exists, restore and present.
-2. Read all checkpoint files: `dispatch-plan.md`, `arch-anchor.md`, `heads-brief.md`, `dev-squad.md`, `uiux-squad.md`.
+2. Read all checkpoint files: `dispatch-plan.md`, `arch-anchor.md`, `heads-brief.md`, `dev-squad.md`, `uiux-squad.md`, `doc-expert.md`.
 3. Produce Squad Review block (see Synthesis section below).
 4. **Write checkpoint:** `.claude/squad-run/synthesis.md`.
 
@@ -236,6 +250,7 @@ Evict when less than 50% chance the member surfaces something the others won't.
 ### Specialist Squads
 Dev Squad: ✓ or ✗ (evict only for pure backend/schema changes with zero rendering impact)
 UI/UX Squad: ✓ or ✗ (evict only for pure backend/schema changes with zero rendering impact)
+Doc Expert: ✓ or ✗ (evict only for pure internal refactors with zero user-facing surface)
 
 ### Pre-Summarize
 - architecture file → arch_summary (always)
@@ -599,6 +614,37 @@ Be decisive. Pick a path.
 
 ---
 
+### Documentation Expert (Phase 3)
+
+```
+You are the Documentation Expert for {project_name} — a {tech_stack} project.
+Your job is to review the outputs of all squads and produce a unified documentation plan.
+You are NOT writing the docs — you are specifying what must be written, by whom, and why.
+
+FEATURE GOAL: {goal}
+
+HEADS TEAM BRIEF:
+{heads_brief}
+
+DEV SQUAD POSITION:
+{dev_squad_output}
+
+UI/UX SQUAD POSITION:
+{uiux_squad_output}
+
+Produce "## Documentation Plan" with:
+- **What must be created** — new docs, READMEs, SKILL.md files, API references, changelogs; exact file paths
+- **What must be updated** — existing docs that will be stale after this feature ships; exact file paths + what changes
+- **User-facing explanation** — how should this feature be explained to end users? One clear paragraph.
+- **Developer-facing notes** — what does a developer integrating or maintaining this need to know that isn't obvious from the code?
+- **Documentation risks** — anything in the squad outputs that is underdocumented, ambiguous, or likely to cause confusion without explicit documentation
+
+Be specific. Name file paths. If a squad output lacks information needed to document a surface, flag it as a gap.
+**Output budget: 500 tokens total. Max 4 bullets per section, one sentence each.**
+```
+
+---
+
 ## Synthesis
 
 After all phases complete, produce the Squad Review block:
@@ -635,6 +681,9 @@ _(Omit sections for evicted members entirely.)_
 ### UI/UX Squad
 {3–4 bullets from uiux-squad.md — Go/No-Go + key constraints}
 
+### Documentation Expert
+{3–4 bullets from doc-expert.md — what must be created/updated + key risks}
+
 ### Conflicts & Tensions
 - {member A} says {X} — {member B} says {Y}: resolution needed
 - _(omit if none)_
@@ -667,3 +716,6 @@ The spec is written **after** this block.
 | Writing spec before synthesis | Squad Review is a hard gate. |
 | Ignoring Dev Squad or UI/UX Squad Go/No-Go | A "No-Go" from either squad is a blocker. Ask the user before writing the spec. |
 | Evicting Dev Squad | Only evict if the goal has zero implementation surface (docs, config comments). |
+| Evicting Doc Expert for features | Doc Expert stays for all features; only evict for pure internal refactors. |
+| Doc Expert reading source files | Doc Expert receives injected squad outputs — it does not read code files. |
+| Dispatching Doc Expert before Phase 2 completes | Doc Expert must run after both dev-squad.md and uiux-squad.md are written. |
