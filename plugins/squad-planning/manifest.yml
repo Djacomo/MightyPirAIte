@@ -1,0 +1,24 @@
+name: squad-planning
+type: skill
+version: 2.0.0
+author: Djacomo
+description: >
+  Triage router for planning, analysis, architectural evaluation, and risk assessment.
+  Classifies the request type and perspective, then dispatches the lightest sufficient
+  route — from a single expert response to a full multi-agent squad cascade.
+  Produces a structured handoff package. Project-agnostic — reads context from .claude/squad-profile.md.
+
+stack:
+  - any
+
+level:
+  - mid
+  - senior
+  - architect
+
+claude-code-version: ">=1.0.0"
+tested-on:
+  - macOS
+
+cost:
+  level: free

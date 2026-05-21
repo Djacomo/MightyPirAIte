@@ -1,0 +1,23 @@
+name: stakeholder-acceptance
+type: skill
+version: 1.0.0
+author: Djacomo
+description: >
+  Post-implementation stakeholder review — AI compliance check against original requirements
+  plus a human UAT click-through script. Run after implementation is complete,
+  before marking a feature as shipped.
+
+stack:
+  - any
+
+level:
+  - mid
+  - senior
+  - architect
+
+claude-code-version: ">=1.0.0"
+tested-on:
+  - macOS
+
+cost:
+  level: free

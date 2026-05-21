@@ -1,6 +1,6 @@
 # ⚓ Mighty PirAIte
 
-[![version](https://img.shields.io/badge/version-1.0.0-F0C040?style=flat-square&labelColor=0A1628)](https://github.com/Djacomo/MightyPirAIte/releases)
+[![version](https://img.shields.io/badge/version-0.1.0-F0C040?style=flat-square&labelColor=0A1628)](https://github.com/Djacomo/MightyPirAIte/releases)
 [![license](https://img.shields.io/badge/license-MIT-2A6EA6?style=flat-square&labelColor=0A1628)](./LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-tools-F0C040?style=flat-square&labelColor=0A1628)](https://claude.ai/code)
 [![by Djacomo](https://img.shields.io/badge/by-Djacomo-E8EDF5?style=flat-square&labelColor=0A1628)](https://github.com/Djacomo)

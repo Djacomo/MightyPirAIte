@@ -1,0 +1,21 @@
+name: ui-components-refactor
+type: skill
+version: 1.0.0
+author: Djacomo
+description: >
+  Extracts a reusable UI component library and design tokens from existing HTML/CSS,
+  then applies them consistently across the whole project — one incremental batch at a time.
+
+stack:
+  - any
+
+level:
+  - mid
+  - senior
+
+claude-code-version: ">=1.0.0"
+tested-on:
+  - macOS
+
+cost:
+  level: free
