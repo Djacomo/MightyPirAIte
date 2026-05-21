@@ -1,44 +1,495 @@
 ---
 name: squad-planning
-description: Use when starting any planning, spec, or handoff writing activity — invoke before writing any spec, plan, or handoff document to get parallel squad review; first run triggers project setup
+description: Use as the entry point for planning, analysis, architectural evaluation, risk assessment, and structured handoff activities. Route to the lightest process that can answer the need; invoke before writing a formal spec, handoff, or implementation brief.
 ---
 
 # Squad Planning
 
 ## Overview
 
-Squad Planning runs a **three-tier Tavola Rotonda** before any spec or plan is written.
+Squad Planning is the project-level orchestration skill for **understanding what kind of work is being asked before deciding how much process is justified**.
 
-- **Tier 1 — Heads Team**: Strategic, cross-cutting review. Produces the "Heads Brief".
-- **Tier 2 — Specialist Squads**: Dev Squad (Backend + Frontend + Accessibility) and Creative Squad (UX + Brand + Campaign) receive the Brief and go deep in their domain via a mini round table.
-- **Tier 3 — Documentation Expert**: Reads all squad outputs and the Heads Brief, then produces a unified documentation plan covering every domain.
+It does **not** assume that every request is a new feature spec. It can handle:
 
-**This skill is project-agnostic.** All project-specific context lives in `.claude/squad-profile.md`.
+- bug investigation
+- feature design
+- pre-sprint evaluation
+- MVP scope reduction
+- architectural trade-off analysis
+- post-implementation review
+- structured handoff creation
+- optional implementation handoff toward Claude Code or another execution workflow
 
-**Announce at start:** "Activating Heads Team: reading project profile — evaluating roster."
+The primary outcome of this skill is **Option A: a structured handoff package**. Implementation is **Option B: optional downstream execution** and is never the default outcome.
 
-**Checkpoint directory:** `.claude/squad-run/` — written after every phase. Delete it to start a fresh run.
+This skill is project-agnostic. Project-specific context lives in:
+
+- `.claude/squad-profile.md` — static project identity and orientation
+- `.claude/squad-memory.md` — persistent, incrementally updated project state
+- `.claude/squad-handoff.md` — latest structured handoff package for team consumption
+- `.claude/squad-handoff-format.md` — fixed handoff format reference used to generate the handoff file
 
 ---
 
-## First Run — Question Time
+## Primary Goal
 
-Check whether `.claude/squad-profile.md` exists in the project root.
+The goal of Squad Planning is to produce the **lightest sufficient analysis path** that yields a high-quality decision, review, or handoff package without forcing a full multi-agent cascade when it is not justified.
 
-**If missing:** Ask the user the following in a single turn:
+This means:
+
+- start by classifying the request
+- identify the relevant perspective
+- choose the smallest route that can answer well
+- escalate only when new evidence justifies escalation
+
+---
+
+## Final Outcome
+
+### Default outcome — Option A
+
+The default outcome is a **handoff package** that a human team, a Head Team, or a downstream implementation tool can consume without re-reading the codebase from zero.
+
+The handoff package may include:
+
+- request classification
+- perspective (`as-is`, `to-be`, `delta`, `retro`)
+- findings
+- architectural and product decisions
+- acceptance criteria
+- risk register
+- open questions
+- suggested task breakdown
+- next sprint scope
+
+### Optional outcome — Option B
+
+If the user explicitly wants implementation follow-through, Squad Planning may prepare an **implementation-ready handoff** for Claude Code or another execution workflow.
+
+Option B is downstream and optional. It must never replace Option A.
+
+If Option B is used, the orchestrator must update `.claude/squad-memory.md` after implementation or after implementation review, so future runs do not need to reconstruct project state from the codebase alone.
+
+---
+
+## First Run — Project Files
+
+At run start, check for these files in the project root:
+
+- `.claude/squad-profile.md`
+- `.claude/squad-memory.md`
+- `.claude/squad-handoff.md`
+- `.claude/squad-handoff-format.md`
+
+### If `.claude/squad-profile.md` is missing
+
+Ask the user the following in a single turn:
 
 > 1. **Project identity** — Name and one-sentence description.
 > 2. **Tech stack** — Language, framework, key libraries.
-> 3. **Stakeholders** — Who are the end users? For each: name, what they do, what makes their perspective unique. (1–4 stakeholders.)
+> 3. **Stakeholders** — Who are the key users or business perspectives? For each: name, what they do, what makes their perspective unique. (1–4 stakeholders.)
 > 4. **Architecture file** — Path to the file that gives instant codebase orientation.
-> 5. **Security reference** — Path to an existing file showing correct auth/permission patterns. Say "none" if absent.
-> 6. **Test infrastructure** — Test directory path, framework name, maturity (mature or sparse).
+> 5. **Security reference** — Path to an existing file showing correct auth/permission patterns. Say `none` if absent.
+> 6. **Test infrastructure** — Test directory path, framework name, maturity (`mature` or `sparse`).
 
-Write `.claude/squad-profile.md` using the template below and confirm: **"Profile saved. Squad is ready."**
+Write `.claude/squad-profile.md` using the template in this file and confirm:
 
-**If found:** Read it silently and proceed to Checkpoint Check.
+**"Profile saved. Squad Planning is ready."**
 
-### Profile File Template
+### If `.claude/squad-memory.md` is missing
+
+Create it immediately using the fixed template in the **Squad Memory** section below.
+
+### If `.claude/squad-handoff-format.md` is missing
+
+Create it from the fixed reference format bundled with this skill, then proceed.
+
+### If `.claude/squad-handoff.md` is missing
+
+Do nothing. It will be created at the end of the first handoff-producing run.
+
+---
+
+## Core Principle — Triage Before Process
+
+Never jump directly into a full squad cascade.
+
+Before choosing a route, the orchestrator must perform **triage**.
+
+Triage can be completed in one turn if the request is clear. If it is unclear, ask focused questions until these three conditions are satisfied:
+
+- **Type is clear** — what kind of work is this?
+- **Perspective is clear** — are we evaluating current state, desired state, difference, or retrospective?
+- **Scope is minimally bounded** — enough to route without guessing wildly
+
+Do not ask all possible questions. Ask only the minimum set needed to route confidently.
+
+### Triage exit criteria
+
+Triage ends when all are true:
+
+- request type is classified
+- perspective is classified
+- route can be chosen without major ambiguity
+
+If a blocking ambiguity remains, ask before dispatch.
+
+---
+
+## Classification Axes
+
+Every request must be classified on **two independent axes**.
+
+### Axis 1 — Type
+
+Choose one:
+
+- `bug` — something existing behaves incorrectly or inconsistently
+- `feature` — something new or materially expanded is being proposed
+- `analysis` — evaluation, comparison, sizing, risk review, or architectural reasoning without immediate implementation
+- `micro-fix` — very small correction with narrow blast radius, e.g. label, spacing, single style mismatch, copy fix
+- `retro` — post-implementation review of what was built, what changed, what regressed, and what was learned
+
+### Axis 2 — Perspective
+
+Choose one primary perspective:
+
+- `as-is` — understand the current implementation, behavior, constraints, or bug
+- `to-be` — design or evaluate the desired future state
+- `delta` — compare current state vs proposed change
+- `retro` — inspect outcome after implementation or release
+
+These axes combine. Examples:
+
+- broken winner algorithm → `bug + as-is`
+- evaluate a proposed winner algorithm before sprint → `feature + to-be`
+- compare current behavior vs target MVP → `analysis + delta`
+- review a just-merged feature → `retro + retro`
+- misaligned image in a card → `micro-fix + as-is`
+
+---
+
+## Routing Table
+
+After triage, choose exactly one primary route.
+
+| Route | When to use | Default participants | Expected weight |
+|---|---|---|---|
+| **Route A — Direct Expert Response** | One role can answer directly with no structured handoff needed | 1 expert | Very light |
+| **Route B — Direct Squad Delegation** | The problem naturally belongs to an existing light squad | `dev-squad` or `uiux-squad` | Light |
+| **Route C — Micro-Fix Resolution** | Tiny blast radius, no meaningful strategic review required | orchestrator or single expert | Minimal |
+| **Route D — Focused Internal Review** | Needs reasoning from 2–4 roles but not a full planning cascade | small selected set | Medium |
+| **Route E — Full Squad Planning** | Needs formal handoff, strong cross-functional reasoning, or pre-sprint package | Heads + selected specialists | Heavy |
+
+Always choose the **lightest route that can answer well**.
+
+---
+
+## Route Selection Rules
+
+### Route A — Direct Expert Response
+
+Use when one role can answer convincingly without multi-perspective synthesis.
+
+Typical examples:
+
+- `/arch` — architectural opinion on a narrow choice
+- `/pm` — scope sanity check
+- `/qa` — what should be tested
+- `/devsecops` — is this design exposing data or auth risk?
+
+This route does **not** generate a formal handoff unless the user asks for one.
+
+### Route B — Direct Squad Delegation
+
+Use when the issue naturally maps to an already-existing light squad.
+
+Delegate to:
+
+- `dev-squad` for code, bug, backend/frontend feasibility, implementation review, small feature development
+- `uiux-squad` for visual consistency, UX flow, accessibility, UI defects, interaction behavior
+
+Examples:
+
+- button style inconsistent with design system → `uiux-squad`
+- investigate backend service defect → `dev-squad`
+- accessibility concern in an existing component → `uiux-squad`
+- small implementation-ready feature with limited surface → `dev-squad`
+
+### Route C — Micro-Fix Resolution
+
+Use when all are true:
+
+- blast radius is narrow
+- no meaningful architectural/product uncertainty exists
+- no structured handoff is needed
+- no cross-domain conflict is expected
+
+Examples:
+
+- text typo
+- label mismatch
+- spacing or alignment issue
+- obviously wrong icon or color token
+
+If investigation reveals hidden complexity, immediately re-route to D or E.
+
+### Route D — Focused Internal Review
+
+Use when the problem needs several viewpoints, but a full planning cascade would be wasteful.
+
+Typical combinations:
+
+- `arch + pm`
+- `arch + qa`
+- `arch + devsecops`
+- `arch + pm + qa`
+- `arch + uiux`
+
+Use this for:
+
+- pre-sprint effort/risk evaluation
+- MVP reduction
+- delta analysis
+- design-vs-implementation tension
+- architecture + product trade-off review
+
+This route may generate a short handoff if useful.
+
+### Route E — Full Squad Planning
+
+Use only when at least one is true:
+
+- the user explicitly asks for a formal handoff package
+- the request spans multiple domains with unresolved tensions
+- the outcome must support sprint planning or structured execution
+- the feature introduces meaningful cross-cutting change
+- a broader review is needed because previous lighter routes exposed uncertainty
+
+This route is the only one that should regularly produce the full `.claude/squad-handoff.md` package.
+
+---
+
+## Creative Activation Rule
+
+Creative review is **not default-on**.
+
+Activate creative roles only if at least one is true:
+
+- the request directly affects a user-facing flow, IA, or usability question
+- the request affects component interaction or screen behavior beyond a trivial UI fix
+- the request includes communication, naming, release framing, or customer-facing packaging
+- the request explicitly asks for UX, brand, design consistency, or go-to-market reasoning
+
+### Creative role mapping
+
+- For product UX and accessibility concerns, prefer `uiux-squad`
+- For broader full planning with genuine user-facing design implications, activate UX-oriented participation inside Route D or E
+- Activate brand/promo reasoning **only** when customer-facing communication or launch framing is explicitly relevant
+
+Never activate brand/promo reasoning for pure backend, schema, infra, or internal-only work.
+
+---
+
+## Consultation Chain
+
+Parallel review is useful, but not sufficient.
+
+If an agent's output creates a new uncertainty that another role is uniquely qualified to resolve, the orchestrator may run a **consultation chain**.
+
+Example:
+
+1. Arch says the design is feasible but introduces hidden coupling.
+2. PM must now judge whether the coupling is acceptable for MVP.
+3. QA then checks whether the narrowed path is testable.
+
+A consultation chain is sequential and targeted. It should be used sparingly.
+
+Use it when:
+
+- one role's finding changes the frame for another role
+- there is a disagreement that cannot be synthesized honestly without follow-up
+- a lighter route uncovers a real blocker and needs escalation
+
+---
+
+## Direct Addressing
+
+Users may directly call a role or route using explicit prefixes, for example:
+
+- `/arch`
+- `/pm`
+- `/qa`
+- `/devsecops`
+- `/dev-squad`
+- `/uiux-squad`
+- `/archive-memory`
+
+### Direct addressing rules
+
+- If the user explicitly names a role, prefer Route A unless the request itself clearly requires D or E.
+- If the user explicitly names `dev-squad` or `uiux-squad`, delegate directly unless the request is obviously misrouted.
+- If the user invokes `/archive-memory`, archive the current `squad-memory.md` snapshot to a timestamped archive file and recreate a fresh current memory file using the fixed template.
+
+---
+
+## Lightweight Checkpointing
+
+The current version of Squad Planning does **not** require a fixed seven-file checkpoint cascade.
+
+### Checkpoint rule
+
+Checkpoint only when one of these is true:
+
+- the route has more than 2 meaningful phases
+- a handoff package is being generated
+- a consultation chain creates non-trivial intermediate reasoning worth preserving
+- the process is likely to resume later
+
+For any route with more than 2 phases, checkpointing is mandatory.
+
+Recommended checkpoint directory:
+
+- `.claude/squad-run/`
+
+Recommended files are contextual, not fixed. Example names:
+
+- `triage.md`
+- `focused-review.md`
+- `consultation-chain.md`
+- `full-planning.md`
+- `handoff-draft.md`
+- `memory-update.md`
+
+Do not create checkpoint files just for ceremony.
+
+---
+
+## Roles
+
+### Core heads roles
+
+| Role | Purpose |
+|---|---|
+| **Arch Lead** | Structure, integration, blast radius, technical feasibility |
+| **PM** | Scope, MVP fit, delivery value, open questions |
+| **QA/Test Engineer** | Testability, regression surface, confidence strategy |
+| **DevSecOps Leader** | Auth, permission, input/output, data exposure, operational risk |
+
+### Optional roles
+
+| Role | Use when |
+|---|---|
+| **Stakeholder voice** | A named user/business perspective materially changes decisions |
+| **UX-oriented reviewer** | Flow, usability, placement, consistency matter |
+| **Brand / promo reviewer** | Naming, release framing, feature communication matter |
+
+### Specialist delegation
+
+| Squad | Use when |
+|---|---|
+| **dev-squad** | Implementation feasibility or execution for code-centric work |
+| **uiux-squad** | UI/UX/accessibility analysis or implementation |
+
+---
+
+## Route E — Membership and Eviction Rules
+
+Route E is selective. It is not a ceremonial full-cascade by default.
+
+### Heads roles
+
+| Role | Default | Evict when |
+|---|---|---|
+| **Arch Lead** | Keep | Never evict in Route E |
+| **PM** | Keep | Evict only for pure technical/internal analysis with zero scope or prioritization question |
+| **QA/Test Engineer** | Keep | Evict only if the output has no implementation surface and no testability consequence |
+| **DevSecOps Leader** | Conditional | Evict when there is no auth, permission, data exposure, input surface, or operational risk change |
+
+### Optional roles
+
+| Role | Default | Activate when | Evict when |
+|---|---|---|---|
+| **Stakeholder voice** | Off | A real user/business perspective changes trade-offs or acceptance | That perspective adds no decision value for this goal |
+| **UX-oriented reviewer** | Off | Flow, IA, discoverability, usability, component behavior, or consistency matter | The work is pure backend/internal or trivially cosmetic |
+| **Brand / promo reviewer** | Off | Naming, launch framing, release communication, or customer-facing packaging matter | The work is internal-only or has no communication surface |
+
+### Specialist squad delegation inside Route E
+
+| Squad | Default | Activate when | Evict when |
+|---|---|---|---|
+| **dev-squad** | Off | The output must be implementation-ready or code-feasibility detail matters materially | No meaningful implementation surface exists |
+| **uiux-squad** | Off | UI/UX/accessibility reasoning needs deeper execution-level review | The work has no relevant UI/UX/a11y surface |
+
+### Eviction discipline
+
+A role should remain active only if there is at least a reasonable chance it will surface something non-redundant.
+
+If a role would merely restate another role's findings, evict it.
+
+---
+
+## Full Route E — Recommended Sequence
+
+Only for Route E.
+
+### Phase 1 — Triage & planning
+
+- classify type
+- classify perspective
+- identify selected roles
+- decide whether a handoff package is required
+- decide whether memory update will be needed at the end
+
+### Phase 2 — Context anchor
+
+The orchestrator reads:
+
+- `.claude/squad-profile.md`
+- `.claude/squad-memory.md`
+- architecture reference from profile
+- optional security reference from profile when relevant
+- `.claude/squad-handoff-format.md` if a formal handoff is required
+
+Then produce:
+
+- `{project_snapshot}` — concise project state summary from profile + memory
+- `{arch_summary}` — architecture orientation summary
+- `{memory_summary}` — concise state summary from squad-memory
+- `{security_summary}` — only when relevant
+
+### Phase 3 — Head review
+
+Dispatch only the selected heads roles. Not all roles are mandatory.
+
+### Phase 4 — Specialist or delegated review
+
+Activate only the specialists justified by the route.
+
+This may include:
+
+- `dev-squad`
+- `uiux-squad`
+- UX-oriented reviewer
+- brand/promo reviewer
+- stakeholder voice
+
+### Phase 5 — Consultation chain (optional)
+
+Run only if needed.
+
+### Phase 6 — Synthesis
+
+Produce a final planning synthesis.
+
+### Phase 7 — Handoff + memory update
+
+- write `.claude/squad-handoff.md` if this run produces a formal handoff
+- update `.claude/squad-memory.md` if the run changed project-level understanding, decisions, risks, or next sprint scope
+
+---
+
+## Squad Profile Template
 
 ```markdown
 # Squad Profile
@@ -66,668 +517,836 @@ voice: {tone — e.g. "first person, non-technical, honest about confusion"}
 
 ---
 
-## Checkpoint Check
+## Squad Memory
 
-On every run, before dispatching anything, check `.claude/squad-run/` for existing checkpoint files. Restore completed phases from disk; dispatch only missing ones.
+If `.claude/squad-memory.md` is missing, create it with this exact structure.
 
-**Checkpoint files and what they represent:**
+### Structure rules
 
-| File | Phase |
-|---|---|
-| `dispatch-plan.md` | Phase 0 — AI Expert output |
-| `arch-anchor.md` | Phase 1a — Arch Lead output |
-| `heads-brief.md` | Phase 1b — Heads Team compressed brief |
-| `dev-squad.md` | Phase 2 — Dev Squad unified position |
-| `creative-squad.md` | Phase 2 — Creative Squad unified position |
-| `doc-expert.md` | Phase 3 — Documentation Expert plan |
-| `synthesis.md` | Final synthesis |
+- Header names are immutable.
+- The orchestrator updates existing sections; it does not invent new top-level sections.
+- If a section is empty, keep it and place `<!-- none yet -->` inside.
+- All sections except **Next Sprint Scope** are append-oriented.
+- **Next Sprint Scope** is overwritten on each meaningful planning run so it always represents the next cycle, not accumulated history.
+- Git remains the primary historical log; this file is the current operational memory.
 
-**Announce restored vs. dispatched:**
-
-```
-Resuming squad run.
-✓ Phase 0 restored  (dispatch-plan.md)
-✓ Phase 1a restored (arch-anchor.md)
-↻ Phase 1b dispatching — no checkpoint found
-```
-
-For a fresh run (no checkpoints), announce:
-
-```
-Fresh squad run.
-Phase 0: AI Expert dispatched.
-Heads Team roster: PM ✓ | Arch Lead ✓ | DevSecOps ✓ | Good-Hacker ✓ | QA ✓ | {Stakeholder 1} ✗ (reason)
-Phase 2: Dev Squad ✓ | Creative Squad ✓
-Phase 3: Doc Expert ✓
-```
-
----
-
-## The Heads Team (Tier 1)
-
-| Role | Anchor? | Domain |
-|---|---|---|
-| **AI Expert** | Phase 0 (serial) | Dispatch planning — never evict |
-| **Arch Team Lead** | Yes — Phase 1a solo | File ownership, data model, integration points, breaking changes — never evict |
-| **PM** | No | Scope, MVP, delivery risk, user stories |
-| **DevSecOps Leader** | No | Auth gates, input validation, data exposure, compliance |
-| **Good-Hacker** | No | Offensive threat model |
-| **QA/Test Engineer** | No | Test strategy, regression surface |
-| **Stakeholders** | No | Loaded from squad-profile; evicted per `evict_when` |
-
-### Heads Team Eviction Rules
-
-| Member | Evict when |
-|---|---|
-| AI Expert | Never |
-| Arch Team Lead | Never |
-| PM | Genuine hotfix only (wrong label, broken style, single-line typo) |
-| DevSecOps Leader | No new data flows, endpoints, inputs, or query parameters |
-| Good-Hacker | UI/template/doc-only — no code paths, no data flow |
-| QA/Test Engineer | UI/template-only with zero logic changes |
-| Stakeholders | Per `evict_when` in profile |
-
----
-
-## The Specialist Squads (Tier 2)
-
-Both squads always run after the Heads Team in a full cascade. Evict a squad only if its domain is completely irrelevant (e.g., evict UI/UX Squad for a pure backend/schema change with zero rendering impact; evict Dev Squad never).
-
-### Dev Squad
-
-| Role | Phase |
-|---|---|
-| Senior Backend Engineer | Phase 2a — parallel |
-| Senior Frontend Engineer | Phase 2a — parallel |
-| Senior Accessibility Engineer | Phase 2a — parallel |
-| Dev Lead | Phase 2b — reconciliation (reads all 2a outputs) |
-
-### Creative Squad
-
-| Role | Phase |
-|---|---|
-| Senior UX Designer | Phase 2a — parallel |
-| Senior Brand Designer | Phase 2a — parallel |
-| Creative Lead | Phase 2b — reconciliation (reads both 2a outputs) |
-
-### Documentation Expert (Phase 3)
-
-Runs solo after both squads complete. Receives `heads-brief.md` + `dev-squad.md` + `creative-squad.md` and produces a unified documentation plan. Evict only when the goal is a pure internal refactor with zero user-facing surface.
-
----
-
-## Dispatch Pattern
-
-### Phase 0 — AI Expert (serial)
-
-1. Check `.claude/squad-run/dispatch-plan.md` — if exists, restore and skip to Phase 1a check.
-2. Read `.claude/squad-profile.md` only.
-3. Dispatch **AI Expert** as a single foreground `Agent` call (`subagent_type: "claude"`).
-4. AI Expert returns Dispatch Plan: active Heads Team roster, per-agent file lists, output budgets, pre-summarize list.
-5. **Write checkpoint:** `.claude/squad-run/dispatch-plan.md` ← AI Expert full output.
-
-### Phase 1a — Arch Lead Anchor (serial)
-
-1. Check `.claude/squad-run/arch-anchor.md` — if exists, restore and skip.
-2. **Orchestrator pre-flight** — read architecture file, produce `{arch_summary}` (200–300 words).
-3. If DevSecOps or Good-Hacker are active and `security_reference` is not "none", read it and produce `{security_summary}` (100–150 words).
-4. Dispatch **Arch Team Lead** alone as a single foreground `Agent` call.
-5. **Write checkpoint:** `.claude/squad-run/arch-anchor.md` ← Arch Lead full output.
-
-### Phase 1b — Heads Team Parallel
-
-1. Check `.claude/squad-run/heads-brief.md` — if exists, restore and skip.
-2. Read `arch-anchor.md` content as `{arch_anchor_text}`.
-3. Dispatch all active non-Arch Heads Team members in **parallel** `Agent` calls. Each receives `{arch_anchor_text}` injected as text (not re-read).
-4. Wait for all to return.
-5. Orchestrator compresses all Phase 1b outputs into `{heads_brief}` (~400 tokens): key constraints, risks, and decisions per domain.
-6. **Write checkpoint:** `.claude/squad-run/heads-brief.md` ← compressed brief.
-
-### Phase 2 — Specialist Squads (parallel squads, sequential within each)
-
-Dev Squad and Creative Squad are dispatched to start **at the same time**. Within each squad, Phase 2b waits for Phase 2a.
-
-**Dev Squad:**
-1. Check `.claude/squad-run/dev-squad.md` — if exists, restore and skip.
-2. Read `heads-brief.md` as `{heads_brief}`.
-3. Phase 2a: Dispatch Senior Backend Engineer + Senior Frontend Engineer + Senior Accessibility Engineer in parallel. All receive `{heads_brief}`.
-4. Phase 2b: Dispatch Dev Lead alone. Receives all three Phase 2a outputs.
-5. **Write checkpoint:** `.claude/squad-run/dev-squad.md` ← Dev Lead output.
-
-**Creative Squad (in parallel with Dev Squad):**
-1. Check `.claude/squad-run/creative-squad.md` — if exists, restore and skip.
-2. Read `heads-brief.md` as `{heads_brief}`.
-3. Phase 2a: Dispatch Senior UX Designer + Senior Brand Designer in parallel. Both receive `{heads_brief}`.
-4. Phase 2b: Dispatch Creative Lead alone. Receives both Phase 2a outputs.
-5. **Write checkpoint:** `.claude/squad-run/creative-squad.md` ← Creative Lead output.
-
-### Phase 3 — Documentation Expert (serial)
-
-1. Check `.claude/squad-run/doc-expert.md` — if exists, restore and skip.
-2. Read `heads-brief.md`, `dev-squad.md`, `creative-squad.md` as context.
-3. Dispatch **Documentation Expert** alone as a single foreground `Agent` call.
-4. **Write checkpoint:** `.claude/squad-run/doc-expert.md` ← Doc Expert full output.
-
-### Synthesis
-
-1. Check `.claude/squad-run/synthesis.md` — if exists, restore and present.
-2. Read all checkpoint files: `dispatch-plan.md`, `arch-anchor.md`, `heads-brief.md`, `dev-squad.md`, `creative-squad.md`, `doc-expert.md`.
-3. Produce Squad Review block (see Synthesis section below).
-4. **Write checkpoint:** `.claude/squad-run/synthesis.md`.
-
----
-
-## Agent Prompt Templates
-
-### Placeholders
-
-From profile: `{project_name}`, `{project_description}`, `{tech_stack}`, `{test_directory}`, `{test_framework}`, `{test_note}`.
-
-From orchestrator pre-flight:
-- `{arch_summary}` — 200–300 word architecture summary (Phase 0 pre-flight)
-- `{security_summary}` — 100–150 word security patterns summary (omit if "none")
-- `{arch_anchor_text}` — full Arch Lead output injected into Phase 1b agents
-- `{heads_brief}` — ~400-token compressed Heads Team brief injected into Phase 2 agents
-- `{specific_files}` — per-agent file list from AI Expert (1–3 files)
-- `{output_budget}` — token budget from AI Expert
-
----
-
-### AI Expert
-
-```
-You are the AI Efficiency Expert for {project_name} — {project_description}.
-
-FEATURE GOAL: {goal}
-
-Read `.claude/squad-profile.md` for full squad and project context. Do not read any other files.
-
-Produce "## Dispatch Plan":
-
-### Active Heads Team Roster
-List each member: ✓ (keep) or ✗ (evict + one-line reason).
-Evict when less than 50% chance the member surfaces something the others won't.
-
-### Specialist Squads
-Dev Squad: ✓ or ✗ (evict only for pure doc/config changes with zero code or rendering impact)
-Creative Squad: ✓ or ✗ (evict only for pure backend/schema/infra changes with zero user-facing surface)
-Doc Expert: ✓ or ✗ (evict only for pure internal refactors with zero user-facing surface)
-
-### Pre-Summarize
-- architecture file → arch_summary (always)
-- security reference → security_summary (only if DevSecOps or Good-Hacker active; skip if "none")
-
-### Per-Agent File List
-For each active Heads Team member (excluding AI Expert): 1–3 specific files beyond injected summaries.
-
-| Agent | Files to read |
-|---|---|
-| Arch Lead | [path], [path] |
-| PM | (none — arch_summary sufficient) |
-| DevSecOps | [path] |
-| Good-Hacker | [path] |
-| QA | [test_file] |
-| {Stakeholder} | [path] |
-| Senior Backend | [path] |
-| Senior Frontend | [path] |
-| Senior UX Designer | [path] |
-| Senior Brand Designer | [path] |
-| Senior Accessibility | [path] |
-
-### Output Budgets
-Pick one complexity tier:
-
-| Tier | When | Arch | Security agents | PM | Others |
-|---|---|---|---|---|---|
-| Simple | 1–2 files, no new endpoints | 400t | 350t | 250t | 250t |
-| Medium | 2–4 files, one new endpoint | 600t | 500t | 300t | 300t |
-| Complex | schema changes, multiple endpoints | 700t | 600t | 350t | 400t |
-
-State the tier and budget per agent.
-```
-
----
-
-### Arch Team Lead (Phase 1a anchor)
-
-```
-You are the Arch Team Lead for {project_name} — a {tech_stack} project.
-You are the ANCHOR for this review. Your output will be shared with all other Heads Team members as their shared foundation. Be precise and complete.
-
-FEATURE GOAL: {goal}
-
-PROJECT CONTEXT:
-{arch_summary}
-
-Read these specific files only: {specific_files}
-
-Produce "## Arch Lead Review" with:
-- **Files to modify** — exact paths
-- **Files to create** — exact paths + one-line responsibility each
-- **Schema / data model changes** — what changes, what migration strategy
-- **Integration points** — what calls what, in what order; hooks, events, interfaces
-- **Existing patterns to follow** — cite by file:line
-- **Risks & breaking changes** — anything that could regress existing behavior
-
-Be specific. Name files, line ranges, function names. Do not read beyond {specific_files}.
-**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
-```
-
----
-
-### PM (Phase 1b)
-
-```
-You are the Product Manager for {project_name} — {project_description}.
-
-FEATURE GOAL: {goal}
-
-PROJECT CONTEXT:
-{arch_summary}
-
-ARCH LEAD REVIEW (shared foundation — do not re-read architecture file):
-{arch_anchor_text}
-
-Produce "## PM Review" with:
-- **Problem statement** — one sentence: what user problem does this solve? Flag if unclear.
-- **Scope check** — MVP or over-building? What could be deferred?
-- **Roadmap fit** — does this align with current priorities or introduce drift?
-- **Delivery risk** — dependencies, ambiguities, cross-cutting concerns
-- **Missing user stories** — implied scenarios not stated in the goal
-- **Definition of done** — how will we know this is complete?
-
-Challenge the Arch Lead's scope if you disagree. Flag any tension explicitly.
-**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
-```
-
----
-
-### DevSecOps Leader (Phase 1b)
-
-```
-You are the DevSecOps Leader for {project_name} — a {tech_stack} project.
-
-FEATURE GOAL: {goal}
-
-PROJECT CONTEXT:
-{arch_summary}
-
-SECURITY PATTERNS:
-{security_summary}
-
-ARCH LEAD REVIEW (shared foundation — do not re-read architecture file):
-{arch_anchor_text}
-
-Read these specific files only: {specific_files}
-
-Produce "## DevSecOps Review" with:
-- **New attack surface** — endpoints, routes, input fields, or data flows
-- **Auth & permission gates** — what checks are required
-- **Input validation** — which inputs need validation/sanitization and how
-- **Output encoding** — where output is rendered and what encoding is needed
-- **Data exposure** — what is returned; is any of it sensitive or user-identifiable
-- **Rate limiting** — is it needed; cite existing pattern from security summary
-- **Compliance** — privacy, regulatory, or data retention implications
-
-Challenge the Arch Lead's design if you see security gaps. Be specific.
-**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
-```
-
----
-
-### Good-Hacker (Phase 1b)
-
-```
-You are an offensive security specialist reviewing a feature design for {project_name} — a {tech_stack} project.
-You are NOT running live exploits — you are building a threat model against the proposed design.
-
-FEATURE GOAL: {goal}
-
-PROJECT CONTEXT:
-{arch_summary}
-
-EXISTING DEFENSES:
-{security_summary}
-
-ARCH LEAD REVIEW (shared foundation — do not re-read architecture file):
-{arch_anchor_text}
-
-Read these specific files only: {specific_files}
-
-Produce "## Good-Hacker Threat Model" with:
-- **Attack surface inventory** — every new endpoint, input field, or data flow
-- **Attack vectors** — for each surface: what would you try?
-- **Likely successes** — which attacks would succeed and why
-- **What standard defenses miss** — threats typical {tech_stack} patterns don't cover
-- **Hardening requirements** — specific changes needed before shipping
-
-Assume standard {tech_stack} security practices are in place. Find what survives them.
-**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
-```
-
----
-
-### QA/Test Engineer (Phase 1b)
-
-```
-You are the QA/Test Engineer for {project_name} — a {tech_stack} project.
-
-FEATURE GOAL: {goal}
-
-PROJECT CONTEXT:
-{arch_summary}
-
-ARCH LEAD REVIEW (shared foundation — do not re-read architecture file):
-{arch_anchor_text}
-
-Read these specific files only: {specific_files}
-Test suite maturity: {test_note}
-
-Produce "## QA/Test Engineer Review" with:
-- **Unit tests required** — which classes/functions need new tests; cite existing patterns by file:line
-- **Integration tests required** — which end-to-end flows need coverage
-- **Regression surface** — which existing tests could break; name specific files and test methods
-- **Manual test checklist** — happy path + 2 edge cases (3 scenarios max)
-- **Untestable design flags** — anything that cannot be unit tested as designed
-
-Challenge the Arch Lead's design if it makes testing hard. Flag as a spec constraint.
-**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
-```
-
----
-
-### Stakeholder Template (Phase 1b)
-
-```
-You are simulating {stakeholder_name} for {project_name}. {stakeholder_description}
-
-FEATURE GOAL: {goal}
-
-PROJECT CONTEXT:
-{arch_summary}
-
-ARCH LEAD REVIEW (shared foundation):
-{arch_anchor_text}
-
-Read these specific files only: {specific_files}
-
-Produce "## {stakeholder_name} Review" with:
-- **What I understand this does** — describe in plain language
-- **How it affects my experience** — better, worse, or unclear?
-- **What I'd want that isn't mentioned** — missing information or actions
-- **Confusion or friction** — anything unclear, risky, or annoying
-- **Pushback** — anything I'd object to or want changed
-
-{stakeholder_voice}
-**Output budget: {output_budget} tokens total. Max 3 bullets per section, one sentence each.**
-```
-
----
-
-### Senior Backend Engineer (Phase 2a)
-
-```
-You are a Senior Backend Engineer reviewing implementation feasibility for {project_name} — a {tech_stack} project.
-
-FEATURE GOAL: {goal}
-
-HEADS TEAM BRIEF (strategic review — do not re-read any file already covered here):
-{heads_brief}
-
-Read these specific files only: {specific_files}
-
-Produce "## Senior Backend Review" with:
-- **API / service layer** — what endpoints, functions, or services need to be created or modified; exact paths
-- **Data layer** — queries, models, migrations, indexes affected
-- **Performance concerns** — N+1 queries, missing indexes, blocking operations, cache opportunities
-- **Integration risks** — external services, async jobs, event flows that could break
-- **Implementation constraints** — anything that makes the Heads Team plan harder to build than it looks
-
-Be specific. Cite file:line. Do not read beyond {specific_files}.
-**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
-```
-
----
-
-### Senior Frontend Engineer (Phase 2a)
-
-```
-You are a Senior Frontend Engineer reviewing implementation feasibility for {project_name} — a {tech_stack} project.
-
-FEATURE GOAL: {goal}
-
-HEADS TEAM BRIEF (strategic review — do not re-read any file already covered here):
-{heads_brief}
-
-Read these specific files only: {specific_files}
-
-Produce "## Senior Frontend Review" with:
-- **Component structure** — which components need to be created or modified; exact paths
-- **State management** — what state changes, where it lives, how it flows
-- **API integration** — how the frontend calls the backend; error states, loading states
-- **Bundle / performance** — any new dependencies, code-splitting needs, render concerns
-- **Implementation constraints** — anything that makes the Heads Team plan harder to build than it looks
-
-Be specific. Cite file:line. Do not read beyond {specific_files}.
-**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
-```
-
----
-
-### Dev Lead (Phase 2b reconciliation)
-
-```
-You are the Dev Lead for {project_name}. You have received independent reviews from your Senior Backend, Senior Frontend, and Senior Accessibility engineers. Your job is to reconcile their findings into a unified Dev Squad position.
-
-FEATURE GOAL: {goal}
-
-SENIOR BACKEND REVIEW:
-{senior_backend_output}
-
-SENIOR FRONTEND REVIEW:
-{senior_frontend_output}
-
-SENIOR ACCESSIBILITY REVIEW:
-{senior_accessibility_output}
-
-Produce "## Dev Squad Position" with:
-- **Agreed implementation path** — what all three engineers agree on; the safe choices
-- **Tensions to resolve** — where they disagree or see conflicting constraints; your ruling on each
-- **Critical risks** — the top 2–3 risks that must be addressed before implementation begins
-- **Spec amendments** — specific changes to the Heads Team plan needed for implementation feasibility
-- **Go / No-Go** — is the feature ready to implement as specced, or does it need a design revision?
-
-Be decisive. Pick a path. Ambiguity here blocks the team.
-**Output budget: 500 tokens total. Max 4 bullets per section, one sentence each.**
-```
-
----
-
-### Senior Accessibility Engineer (Phase 2a — Dev Squad)
-
-```
-You are a Senior Accessibility Engineer reviewing {project_name} — a {tech_stack} project.
-
-FEATURE GOAL: {goal}
-
-HEADS TEAM BRIEF (strategic review — do not re-read any file already covered here):
-{heads_brief}
-
-Read these specific files only: {specific_files}
-
-Produce "## Senior Accessibility Review" with:
-- **ARIA requirements** — roles, labels, descriptions needed for new elements
-- **Keyboard navigation** — focus order, tab stops, keyboard shortcuts affected
-- **Screen reader behavior** — what is announced, in what order, at each interaction
-- **Color and contrast** — any new visual elements and their contrast requirements
-- **Implementation constraints** — anything that makes this harder or creates technical accessibility debt
-
-Cite WCAG criteria where relevant. Do not read beyond {specific_files}.
-**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
-```
-
----
-
-### Senior UX Designer (Phase 2a — Creative Squad)
-
-```
-You are a Senior UX Designer reviewing {project_name} — a {tech_stack} project.
-
-FEATURE GOAL: {goal}
-
-HEADS TEAM BRIEF (strategic review — do not re-read any file already covered here):
-{heads_brief}
-
-Read these specific files only: {specific_files}
-
-Produce "## Senior UX Designer Review" with:
-- **User flow** — step-by-step: what the user does and sees at each step
-- **Component reuse** — which existing templates, components, or style classes already cover this
-- **Design consistency** — which existing patterns apply; what new identifiers are needed
-- **Information architecture** — is the feature placed correctly in the product hierarchy?
-- **Design constraints** — anything that makes the Heads Team plan harder to design than it looks
-
-Be specific. Name file paths, class/token names, line ranges. Do not read beyond {specific_files}.
-**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
-```
-
----
-
-### Senior Brand Designer (Phase 2a — Creative Squad)
-
-```
-You are a Senior Brand Designer and Marketing Creative for {project_name} — a {tech_stack} project.
-You are NOT reviewing the product UI — you are reviewing the promotional and brand dimension of this feature.
-
-FEATURE GOAL: {goal}
-
-HEADS TEAM BRIEF (strategic review — do not re-read any file already covered here):
-{heads_brief}
-
-Read these specific files only: {specific_files}
-
-Produce "## Senior Brand Designer Review" with:
-- **Promotional angle** — what is the one emotional hook that makes a customer care about this feature?
-- **Visual identity** — what assets need to be created (hero image, icon, banner, social card)? Which existing brand elements apply?
-- **Campaign story** — what is the narrative arc? Problem → solution → outcome in one sentence each.
-- **Copy requirements** — tagline, feature name, description copy, changelog entry tone
-- **Brand risks** — anything in the Heads Team plan that could feel off-brand, confusing, or hard to market
-
-Be specific. If the goal is internal or non-user-facing, flag it explicitly and keep output minimal.
-**Output budget: {output_budget} tokens total. Max 4 bullets per section, one sentence each.**
-```
-
----
-
-### Creative Lead (Phase 2b reconciliation)
-
-```
-You are the Creative Lead for {project_name}. You have received independent reviews from your Senior UX Designer and Senior Brand Designer. Your job is to reconcile their findings into a unified Creative Squad position that covers both product experience and promotional strategy.
-
-FEATURE GOAL: {goal}
-
-SENIOR UX DESIGNER REVIEW:
-{senior_ux_output}
-
-SENIOR BRAND DESIGNER REVIEW:
-{senior_brand_output}
-
-Produce "## Creative Squad Position" with:
-- **Unified creative direction** — the design and brand choices both reviewers agree on
-- **Tensions to resolve** — where product UX and brand pull in different directions; your ruling on each
-- **Critical risks** — the top 2–3 creative risks before implementation begins
-- **Spec amendments** — specific changes to the Heads Team plan needed for creative feasibility
-- **Go / No-Go** — is this ready to design and promote as stated, or does it need a revision?
-
-Be decisive. The Creative Squad speaks with one voice.
-**Output budget: 500 tokens total. Max 4 bullets per section, one sentence each.**
-```
-
----
-
-### Documentation Expert (Phase 3)
-
-```
-You are the Documentation Expert for {project_name} — a {tech_stack} project.
-Your job is to review the outputs of all squads and produce a unified documentation plan.
-You are NOT writing the docs — you are specifying what must be written, by whom, and why.
-
-FEATURE GOAL: {goal}
-
-HEADS TEAM BRIEF:
-{heads_brief}
-
-DEV SQUAD POSITION:
-{dev_squad_output}
-
-CREATIVE SQUAD POSITION:
-{creative_squad_output}
-
-Produce "## Documentation Plan" with:
-- **What must be created** — new docs, READMEs, SKILL.md files, API references, changelogs; exact file paths
-- **What must be updated** — existing docs that will be stale after this feature ships; exact file paths + what changes
-- **User-facing explanation** — how should this feature be explained to end users? One clear paragraph.
-- **Developer-facing notes** — what does a developer integrating or maintaining this need to know that isn't obvious from the code?
-- **Documentation risks** — anything in the squad outputs that is underdocumented, ambiguous, or likely to cause confusion without explicit documentation
-
-Be specific. Name file paths. If a squad output lacks information needed to document a surface, flag it as a gap.
-**Output budget: 500 tokens total. Max 4 bullets per section, one sentence each.**
-```
-
----
-
-## Synthesis
-
-After all phases complete, produce the Squad Review block:
+### Template
 
 ```markdown
----
-## Squad Review — {goal}
-_Heads Team: [active members] | Evicted: [members + reason] | Tier: [Simple/Medium/Complex]_
-_Squads: Dev Squad [✓/✗] | Creative Squad [✓/✗]_
+# Squad Memory — {project_name}
+_Last updated: {date} | Run: {run_id} | Route: {route}_
 
-_(Omit sections for evicted members entirely.)_
+## Architectural Decisions
+<!-- Pattern, structure, and technical choices that are no longer under discussion -->
+<!-- none yet -->
 
-### Arch Lead
-{3–4 bullets from arch-anchor.md}
+## Product Decisions
+<!-- Scope, MVP, sequencing, and product choices that are no longer under discussion -->
+<!-- none yet -->
 
-### PM
-{3–4 bullets}
+## Implemented Features
+<!-- Merged or released work worth remembering without re-reading the codebase -->
+<!-- none yet -->
 
-### DevSecOps
-{3–4 bullets}
+## Next Sprint Scope
+<!-- Replace entirely on each meaningful planning run -->
+<!-- none yet -->
 
-### Good-Hacker
-{3–4 bullets}
+## Open Risks
+<!-- Known unresolved risks -->
+<!-- none yet -->
 
-### QA/Test Engineer
-{3–4 bullets}
+## Resolved Risks
+<!-- Risks closed and how they were resolved -->
+<!-- none yet -->
 
-### {Stakeholder Name}
-{2–3 bullets}
+## Technical Debt
+<!-- Deliberate compromises and cleanup triggers -->
+<!-- none yet -->
 
-### Dev Squad
-{3–4 bullets from dev-squad.md — Go/No-Go + key constraints}
+## Open Questions
+<!-- Questions still blocking or influencing decisions -->
+<!-- none yet -->
 
-### Creative Squad
-{3–4 bullets from creative-squad.md — Go/No-Go + key constraints}
-
-### Documentation Expert
-{3–4 bullets from doc-expert.md — what must be created/updated + key risks}
-
-### Conflicts & Tensions
-- {member A} says {X} — {member B} says {Y}: resolution needed
-- _(omit if none)_
-
-**BLOCKER:** If any conflict requires a product or architectural decision beyond Claude's authority, stop and ask the user.
-
-### Hard Constraints for the Spec
-- {binding constraint}
-- {binding constraint}
----
+## Closed Questions
+<!-- Questions answered so they are not re-litigated -->
+<!-- none yet -->
 ```
 
-The spec is written **after** this block.
+---
+
+## Handoff Package
+
+The handoff package format is stored at:
+
+- `.claude/squad-handoff-format.md`
+
+Use that format whenever generating `.claude/squad-handoff.md`.
+
+The goal is to make the output easily consumable by:
+
+- Head Team members
+- sprint planning
+- downstream implementation tools
+- post-implementation review
+
+Do not force agents to read the whole codebase again if the handoff and memory are current.
+
+---
+
+## Memory Update Rules
+
+Update `.claude/squad-memory.md` after any run that materially changes project understanding.
+
+This includes:
+
+- new architectural decisions
+- new product decisions
+- new risks or risk closures
+- new next sprint scope
+- closed or opened questions
+- completed implementation that changes persistent state
+- retrospectives that confirm what actually happened
+
+Do **not** update memory for trivial ephemeral discussion that does not change project state.
+
+### Memory update discipline
+
+The orchestrator writes memory updates.
+
+Do not delegate the final memory write to specialist agents. They only see slices of the problem. The orchestrator has the full synthesis.
+
+---
+
+## Agent Templates — Design
+
+Core roles use **three template variants**.
+
+### Variant A — Direct
+
+Use for Route A or explicit direct addressing.
+
+Characteristics:
+
+- short
+- opinionated
+- minimal context
+- no formal handoff by default
+
+### Variant B — Focused Review
+
+Use for Route D or for a targeted role inside a smaller route.
+
+Characteristics:
+
+- structured but concise
+- limited context
+- role-specific bullets
+- intended for 2–4 role review flows
+
+### Variant C — Full Review
+
+Use in Route E.
+
+Characteristics:
+
+- full structured review
+- includes perspective awareness
+- produces synthesis-friendly output
+- suitable for handoff generation
+
+---
+
+## Shared Placeholders
+
+From profile:
+
+- `{project_name}`
+- `{project_description}`
+- `{tech_stack}`
+- `{test_directory}`
+- `{test_framework}`
+- `{test_note}`
+
+From orchestrator:
+
+- `{goal}`
+- `{type}`
+- `{perspective}`
+- `{route}`
+- `{project_snapshot}`
+- `{arch_summary}`
+- `{memory_summary}`
+- `{security_summary}`
+- `{specific_files}`
+- `{selected_constraints}`
+- `{output_budget}`
+- `{upstream_question}`
+- `{upstream_findings}`
+- `{stakeholder_name}`
+- `{stakeholder_description}`
+- `{stakeholder_voice}`
+
+---
+
+## Core Agent Templates
+
+### Arch Lead — Variant A (Direct)
+
+```text
+You are the Arch Lead for {project_name}, a {tech_stack} project.
+
+USER REQUEST:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+Respond as a decisive architecture reviewer.
+
+Produce:
+- recommendation
+- main trade-off
+- hidden coupling or blast radius
+- what to inspect next if confidence is low
+
+Keep it short, direct, and opinionated.
+```
+
+### Arch Lead — Variant B (Focused Review)
+
+```text
+You are the Arch Lead for {project_name}, a {tech_stack} project.
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+GOAL:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+ARCHITECTURE SUMMARY:
+{arch_summary}
+
+CURRENT MEMORY:
+{memory_summary}
+
+Read these specific files only if provided:
+{specific_files}
+
+Produce "## Arch Lead Review" with:
+- Technical frame
+- Files or modules affected
+- Integration points or dependencies
+- Main risks or blast radius
+- Recommendation
+
+Name exact paths when possible. Be synthesis-friendly.
+```
+
+### Arch Lead — Variant C (Full Review)
+
+```text
+You are the Arch Lead for {project_name}, a {tech_stack} project.
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+ROUTE: {route}
+FEATURE GOAL:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+ARCHITECTURE SUMMARY:
+{arch_summary}
+
+CURRENT MEMORY:
+{memory_summary}
+
+Read these specific files only:
+{specific_files}
+
+Produce "## Arch Lead Review" with:
+- Current frame (as-is / to-be / delta / retro, according to perspective)
+- Files to modify
+- Files to create
+- Integration points
+- Existing patterns to follow
+- Risks and breaking changes
+- Recommended path
+
+Be specific. Name files, modules, line ranges, interfaces, or services where possible.
+Keep output structured for downstream synthesis.
+```
+
+---
+
+### PM — Variant A (Direct)
+
+```text
+You are the Product Manager for {project_name}.
+
+USER REQUEST:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+Respond as a pragmatic PM.
+
+Produce:
+- what problem this is really solving
+- whether this feels MVP or overbuilt
+- biggest ambiguity
+- recommendation
+
+Keep it short and decisive.
+```
+
+### PM — Variant B (Focused Review)
+
+```text
+You are the Product Manager for {project_name} — {project_description}.
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+GOAL:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+UPSTREAM FINDINGS:
+{upstream_findings}
+
+Produce "## PM Review" with:
+- Problem statement
+- Scope judgment
+- MVP vs overbuild
+- Delivery ambiguity or dependency
+- Recommendation
+
+Be explicit when scope should be reduced.
+```
+
+### PM — Variant C (Full Review)
+
+```text
+You are the Product Manager for {project_name} — {project_description}.
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+ROUTE: {route}
+GOAL:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+ARCH / UPSTREAM FINDINGS:
+{upstream_findings}
+
+Produce "## PM Review" with:
+- Problem statement
+- Scope check
+- MVP cut line
+- Delivery risk
+- Missing user stories or edge cases
+- Definition of done
+- Recommendation
+
+Challenge technical scope if it is overbuilt for the stated outcome.
+```
+
+---
+
+### QA/Test Engineer — Variant A (Direct)
+
+```text
+You are the QA/Test Engineer for {project_name}, a {tech_stack} project.
+
+USER REQUEST:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+Produce:
+- what must be tested first
+- regression concern
+- whether current design is easy or hard to test
+- recommendation
+
+Be concise.
+```
+
+### QA/Test Engineer — Variant B (Focused Review)
+
+```text
+You are the QA/Test Engineer for {project_name}, a {tech_stack} project.
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+GOAL:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+UPSTREAM FINDINGS:
+{upstream_findings}
+
+Read these specific files only if provided:
+{specific_files}
+
+Produce "## QA Review" with:
+- Testability assessment
+- Required unit or integration coverage
+- Regression surface
+- Manual validation path
+- Recommendation
+```
+
+### QA/Test Engineer — Variant C (Full Review)
+
+```text
+You are the QA/Test Engineer for {project_name}, a {tech_stack} project.
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+ROUTE: {route}
+GOAL:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+ARCH / UPSTREAM FINDINGS:
+{upstream_findings}
+
+Read these specific files only:
+{specific_files}
+Test suite maturity: {test_note}
+
+Produce "## QA Review" with:
+- Unit tests required
+- Integration tests required
+- Regression surface
+- Manual test checklist
+- Untestable or fragile design flags
+- Recommendation
+
+Cite existing patterns by path when possible.
+```
+
+---
+
+### DevSecOps Leader — Variant A (Direct)
+
+```text
+You are the DevSecOps Leader for {project_name}, a {tech_stack} project.
+
+USER REQUEST:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+Produce:
+- main attack or exposure concern
+- auth/permission concern if any
+- whether this is low/medium/high operational risk
+- recommendation
+
+Keep it concise and concrete.
+```
+
+### DevSecOps Leader — Variant B (Focused Review)
+
+```text
+You are the DevSecOps Leader for {project_name}, a {tech_stack} project.
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+GOAL:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+SECURITY SUMMARY:
+{security_summary}
+
+UPSTREAM FINDINGS:
+{upstream_findings}
+
+Read these specific files only if provided:
+{specific_files}
+
+Produce "## DevSecOps Review" with:
+- New attack surface
+- Auth and permission concerns
+- Input/output handling risks
+- Data exposure or compliance concerns
+- Recommendation
+```
+
+### DevSecOps Leader — Variant C (Full Review)
+
+```text
+You are the DevSecOps Leader for {project_name}, a {tech_stack} project.
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+ROUTE: {route}
+GOAL:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+SECURITY SUMMARY:
+{security_summary}
+
+ARCH / UPSTREAM FINDINGS:
+{upstream_findings}
+
+Read these specific files only:
+{specific_files}
+
+Produce "## DevSecOps Review" with:
+- Attack surface inventory
+- Auth and permission gates
+- Input validation and sanitization
+- Output exposure
+- Operational or compliance concerns
+- Hardening requirements
+- Recommendation
+
+Challenge the design if it is not safely shippable.
+```
+
+---
+
+## Optional Role Templates
+
+### Stakeholder Voice — Variant B (Focused Review)
+
+```text
+You are simulating {stakeholder_name} for {project_name}.
+
+STAKEHOLDER DESCRIPTION:
+{stakeholder_description}
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+GOAL:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+UPSTREAM FINDINGS:
+{upstream_findings}
+
+Read these specific files only if provided:
+{specific_files}
+
+Produce "## {stakeholder_name} Review" with:
+- What this seems to do from my perspective
+- What helps me
+- What confuses or worries me
+- What seems missing
+- Recommendation
+
+Voice guidance:
+{stakeholder_voice}
+```
+
+### Stakeholder Voice — Variant C (Full Review)
+
+```text
+You are simulating {stakeholder_name} for {project_name}.
+
+STAKEHOLDER DESCRIPTION:
+{stakeholder_description}
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+ROUTE: {route}
+GOAL:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+UPSTREAM FINDINGS:
+{upstream_findings}
+
+Read these specific files only:
+{specific_files}
+
+Produce "## {stakeholder_name} Review" with:
+- What I understand this change to mean
+- What outcome I care about
+- Friction, risk, or confusion from my perspective
+- What would make this acceptable
+- Recommendation
+
+Use this voice:
+{stakeholder_voice}
+```
+
+---
+
+### UX-Oriented Reviewer — Variant B (Focused Review)
+
+```text
+You are the UX-oriented reviewer for {project_name}.
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+GOAL:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+UPSTREAM FINDINGS:
+{upstream_findings}
+
+Read these specific files only if provided:
+{specific_files}
+
+Produce "## UX Review" with:
+- User flow impact
+- Consistency with existing patterns
+- Friction or discoverability issues
+- Accessibility or clarity concern if relevant
+- Recommendation
+
+Focus on product use, not marketing.
+```
+
+### UX-Oriented Reviewer — Variant C (Full Review)
+
+```text
+You are the UX-oriented reviewer for {project_name}.
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+ROUTE: {route}
+GOAL:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+UPSTREAM FINDINGS:
+{upstream_findings}
+
+Read these specific files only:
+{specific_files}
+
+Produce "## UX Review" with:
+- User flow and placement
+- Reuse of existing patterns or components
+- Discoverability and usability risks
+- Interaction or accessibility implications
+- Recommendation
+
+Name screens, components, and user steps where possible.
+```
+
+---
+
+### Brand / Promo Reviewer — Variant B (Focused Review)
+
+```text
+You are the Brand / Promo reviewer for {project_name}.
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+GOAL:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+UPSTREAM FINDINGS:
+{upstream_findings}
+
+Produce "## Brand Review" with:
+- Whether this has customer-facing communication value
+- Naming or framing concern
+- Release communication implication
+- Recommendation
+
+If the request is internal-only, say so explicitly and keep the review minimal.
+```
+
+### Brand / Promo Reviewer — Variant C (Full Review)
+
+```text
+You are the Brand / Promo reviewer for {project_name}.
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+ROUTE: {route}
+GOAL:
+{goal}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+UPSTREAM FINDINGS:
+{upstream_findings}
+
+Produce "## Brand Review" with:
+- Customer-facing value or narrative
+- Naming or release framing
+- Messaging risk or ambiguity
+- What must remain true for communication to be honest
+- Recommendation
+
+Do not review pure internal work as if it were marketable.
+```
+
+---
+
+## Consultation Template
+
+Use for a targeted follow-up between roles.
+
+```text
+You are {role} for {project_name}.
+
+ORIGINAL GOAL:
+{goal}
+
+REQUEST TYPE: {type}
+PERSPECTIVE: {perspective}
+
+UPSTREAM QUESTION:
+{upstream_question}
+
+UPSTREAM FINDINGS:
+{upstream_findings}
+
+PROJECT SNAPSHOT:
+{project_snapshot}
+
+CURRENT MEMORY:
+{memory_summary}
+
+Answer only the follow-up question.
+
+Produce:
+- answer
+- consequence if accepted
+- consequence if rejected
+- recommendation
+
+Stay narrow. Do not restate the entire case.
+```
+
+---
+
+## Synthesis Output
+
+At the end of Route D or E, produce a synthesis block.
+
+```markdown
+## Squad Planning Synthesis — {goal}
+- Type: {type}
+- Perspective: {perspective}
+- Route: {route}
+- Participants: {selected_roles}
+
+### Findings
+- ...
+
+### Architectural decisions
+- ...
+
+### Product decisions
+- ...
+
+### Risks
+- ...
+
+### Open questions
+- ...
+
+### Recommendation
+- ...
+```
+
+If a formal handoff is required, use the dedicated handoff format file.
+
+---
+
+## When to Write `.claude/squad-handoff.md`
+
+Write the handoff file when at least one is true:
+
+- the user asks for a formal handoff
+- the route is E
+- the output is intended for sprint planning
+- the output is intended for downstream implementation
+- the result must be durable for Head Team review
+
+Do not write a formal handoff for a trivial micro-fix unless explicitly requested.
 
 ---
 
@@ -735,19 +1354,27 @@ The spec is written **after** this block.
 
 | Mistake | Fix |
 |---|---|
-| Running without a profile | Always check for `.claude/squad-profile.md` first. |
-| Not checking checkpoints on run start | Always check `.claude/squad-run/` before any dispatch. |
-| Skipping Phase 0 | Phase 0 costs ~500 tokens and saves 5–10× that in Phase 1. Never skip. |
-| Dispatching Phase 1b before writing arch-anchor.md | Write the checkpoint first. |
-| Dispatching Phase 2 before writing heads-brief.md | Write the checkpoint first. |
-| Dev Lead or UX Lead running in parallel with their team | They must run after Phase 2a completes. |
-| Injecting full file content instead of summaries | arch_summary: 200–300 words. heads_brief: ~400 tokens. Never dump full files. |
-| Arch Lead reading beyond specific_files | Arch Lead gets arch_summary + specific_files only. |
-| Phase 1b agents re-reading the architecture file | They receive arch_anchor_text injected — no re-read. |
-| Writing spec before synthesis | Squad Review is a hard gate. |
-| Ignoring Dev Squad or Creative Squad Go/No-Go | A "No-Go" from either squad is a blocker. Ask the user before writing the spec. |
-| Evicting Dev Squad | Only evict if the goal has zero implementation surface (docs, config comments). |
-| Evicting Creative Squad for backend-only changes | Creative Squad stays for any feature with a user-facing or brand surface; evict only for pure backend/schema/infra work. |
-| Evicting Doc Expert for features | Doc Expert stays for all features; only evict for pure internal refactors. |
-| Doc Expert reading source files | Doc Expert receives injected squad outputs — it does not read code files. |
-| Dispatching Doc Expert before Phase 2 completes | Doc Expert must run after both dev-squad.md and creative-squad.md are written. |
+| Treating every request like a feature spec | Run triage first and classify before routing |
+| Defaulting to Route E | Start with the lightest sufficient route |
+| Activating creative roles by default | Use explicit creative activation criteria |
+| Re-reading the codebase from zero every run | Read squad-memory and current handoff first |
+| Letting specialist agents update project memory | Memory updates belong to the orchestrator |
+| Using `squad-memory.md` as a changelog | Keep it as operational state, not historical dump |
+| Letting `Next Sprint Scope` accumulate forever | Overwrite that section each meaningful planning run |
+| Writing a formal handoff for trivial issues | Use Route C or Route A unless durability is needed |
+| Skipping memory update after meaningful planning or implementation | Update memory whenever project understanding changes |
+| Mixing Option A and Option B as if they are the same thing | Option A is the default, Option B is optional downstream execution |
+| Keeping optional roles active when they add no new signal | Apply Route E eviction rules strictly |
+| Forgetting the handoff format reference file | Keep `.claude/squad-handoff-format.md` present and authoritative |
+
+---
+
+## Decision Rule
+
+When in doubt, prefer:
+
+1. better classification over faster dispatch
+2. lighter route over heavier route
+3. explicit escalation over premature orchestration
+4. durable handoff over ephemeral chat output when team reuse matters
+5. memory update over future re-discovery
