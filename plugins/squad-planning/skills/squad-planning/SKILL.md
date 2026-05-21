@@ -216,6 +216,18 @@ Examples:
 - accessibility concern in an existing component → `uiux-squad`
 - small implementation-ready feature with limited surface → `dev-squad`
 
+#### Dependency fallback rule
+
+Before delegating to `dev-squad` or `uiux-squad`, check whether the skill is installed.
+
+If the target skill is **not available**:
+
+1. Notify the user: *"`[skill-name]` is not installed. Falling back to Route D internal review. Install `[skill-name]` from MightyPirAIte for the full specialist experience."*
+2. Re-route to **Route D** using the equivalent roles inline:
+   - `dev-squad` missing → run Arch Lead + QA focused review (Variant B)
+   - `uiux-squad` missing → run UX-oriented reviewer + Arch Lead focused review (Variant B)
+3. Do not silently skip the delegation or fail without explanation.
+
 ### Route C — Micro-Fix Resolution
 
 Use when all are true:
@@ -328,7 +340,7 @@ Users may directly call a role or route using explicit prefixes, for example:
 ### Direct addressing rules
 
 - If the user explicitly names a role, prefer Route A unless the request itself clearly requires D or E.
-- If the user explicitly names `dev-squad` or `uiux-squad`, delegate directly unless the request is obviously misrouted.
+- If the user explicitly names `dev-squad` or `uiux-squad`, delegate directly unless the request is obviously misrouted. If the named skill is not installed, apply the **Dependency fallback rule** from Route B.
 - If the user invokes `/archive-memory`, archive the current `squad-memory.md` snapshot to a timestamped archive file and recreate a fresh current memory file using the fixed template.
 
 ---

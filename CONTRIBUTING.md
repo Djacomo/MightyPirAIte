@@ -110,6 +110,13 @@ cost:
   # Optional but recommended: link to your own pricing page if the tool itself has one
   tool-pricing-url: ~                # null if the tool itself is always free
 
+# Plugin dependencies — optional
+# List other MightyPirAIte skills this tool delegates to at runtime.
+# Users who install this tool must also install these for full functionality.
+# If a dependency is missing, the tool must degrade gracefully with a clear message.
+requires:
+  - dev-squad                          # skill name, kebab-case
+
 # Optional
 tags:
   - architecture

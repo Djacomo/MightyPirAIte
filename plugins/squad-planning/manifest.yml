@@ -20,5 +20,9 @@ claude-code-version: ">=1.0.0"
 tested-on:
   - macOS
 
+requires:
+  - dev-squad
+  - uiux-squad
+
 cost:
   level: free
